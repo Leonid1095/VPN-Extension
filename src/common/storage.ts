@@ -1,5 +1,5 @@
 import { browser } from 'webextension-polyfill-ts';
-import { AppSettings, DEFAULT_SETTINGS, ProxyProfile } from './types';
+import { AppSettings, DEFAULT_SETTINGS, ManagedAccount, ProxyProfile } from './types';
 
 const KEY = 'appSettings';
 
@@ -14,6 +14,7 @@ export async function getSettings(): Promise<AppSettings> {
             stored.bypassList && stored.bypassList.length
                 ? stored.bypassList
                 : [...DEFAULT_SETTINGS.bypassList],
+        account: stored.account ?? null,
     };
 }
 
@@ -39,6 +40,24 @@ export async function removeProfile(id: string): Promise<AppSettings> {
     if (settings.activeProfileId === id) {
         settings.activeProfileId = null;
         settings.enabled = false;
+    }
+    await saveSettings(settings);
+    return settings;
+}
+
+export async function setAccount(account: ManagedAccount | null): Promise<AppSettings> {
+    const settings = await getSettings();
+    settings.account = account;
+    if (!account) {
+        // logout: убираем managed-профили
+        settings.profiles = settings.profiles.filter((p) => p.source !== 'managed');
+        if (
+            settings.activeProfileId &&
+            !settings.profiles.some((p) => p.id === settings.activeProfileId)
+        ) {
+            settings.activeProfileId = null;
+            settings.enabled = false;
+        }
     }
     await saveSettings(settings);
     return settings;

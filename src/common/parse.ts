@@ -1,4 +1,4 @@
-import { ProxyProfile, ProxyScheme } from './types';
+import { ProxyProfile, ProxyScheme, ProxySource } from './types';
 
 const VALID_SCHEMES: ProxyScheme[] = ['https', 'http', 'socks5', 'socks4'];
 
@@ -40,6 +40,7 @@ export interface ParsedProxy {
     port: number;
     username?: string;
     password?: string;
+    name?: string;
 }
 
 export function parseProxyUrl(url: string): ParsedProxy {
@@ -79,6 +80,68 @@ function safeDecode(value: string): string {
     }
 }
 
+/**
+ * Парсинг файла, содержащего прокси-конфиг. Поддерживаются:
+ *  1. JSON-объект:  { name?, scheme, host, port, username?, password? }
+ *  2. JSON-массив объектов выше (вернёт массив)
+ *  3. Текст с URL-кой (одна строка вида scheme://...) — fallback
+ *
+ * Возвращает массив ParsedProxy (может содержать один или несколько профилей).
+ */
+export function parseProxyFile(content: string): ParsedProxy[] {
+    const text = content.trim();
+    if (!text) {
+        throw new Error('Файл пуст');
+    }
+
+    // Попытка JSON
+    try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+            return data.map((it, i) => coerceObjectToProxy(it, i));
+        }
+        if (data && typeof data === 'object') {
+            return [coerceObjectToProxy(data, 0)];
+        }
+    } catch {
+        // не JSON — попробуем как URL
+    }
+
+    // Plain URL
+    const firstLine = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0];
+    if (firstLine) {
+        return [parseProxyUrl(firstLine)];
+    }
+
+    throw new Error('Формат не распознан. Ожидался JSON или ссылка scheme://host:port');
+}
+
+function coerceObjectToProxy(raw: any, idx: number): ParsedProxy {
+    if (!raw || typeof raw !== 'object') {
+        throw new Error(`Запись #${idx + 1}: не объект`);
+    }
+    const scheme = String(raw.scheme || '').toLowerCase() as ProxyScheme;
+    if (!VALID_SCHEMES.includes(scheme)) {
+        throw new Error(`Запись #${idx + 1}: неподдерживаемая схема "${raw.scheme}"`);
+    }
+    const host = String(raw.host || '').trim();
+    if (!isValidHost(host)) {
+        throw new Error(`Запись #${idx + 1}: некорректный host`);
+    }
+    const portRaw = raw.port !== undefined ? Number(raw.port) : defaultPort(scheme);
+    if (!isValidPort(portRaw)) {
+        throw new Error(`Запись #${idx + 1}: некорректный port`);
+    }
+    return {
+        scheme,
+        host,
+        port: portRaw,
+        username: raw.username ? String(raw.username) : undefined,
+        password: raw.password ? String(raw.password) : undefined,
+        name: raw.name ? String(raw.name) : undefined,
+    };
+}
+
 export function validateProfile(profile: Partial<ProxyProfile>): string[] {
     const errors: string[] = [];
     if (!profile.name || !profile.name.trim()) {
@@ -100,4 +163,21 @@ export function validateProfile(profile: Partial<ProxyProfile>): string[] {
         errors.push('SOCKS4 не поддерживает авторизацию по логину/паролю');
     }
     return errors;
+}
+
+export function buildProfile(
+    parsed: ParsedProxy,
+    source: ProxySource,
+    fallbackName: string,
+): ProxyProfile {
+    return {
+        id: generateId(),
+        name: (parsed.name || fallbackName || `${parsed.scheme}://${parsed.host}`).trim(),
+        scheme: parsed.scheme,
+        host: parsed.host,
+        port: parsed.port,
+        username: parsed.username,
+        password: parsed.password,
+        source,
+    };
 }

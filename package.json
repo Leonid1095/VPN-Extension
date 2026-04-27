@@ -1,10 +1,11 @@
 {
   "name": "web-proxy-manager",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Lightweight HTTPS/SOCKS proxy client browser extension.",
   "main": "src/background/background.ts",
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "npm run build:icons && webpack --mode production",
+    "build:icons": "node tools/build-icons.js",
     "dev": "webpack --mode development --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "jest"

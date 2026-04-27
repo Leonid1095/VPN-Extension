@@ -18,7 +18,8 @@
     "src/popup/popup.tsx",
     "src/popup/popup.html",
     "src/common/**/*",
-    "src/lib/proxy/**/*"
+    "src/lib/**/*",
+    "src/types/**/*"
   ],
   "exclude": [
     "node_modules",
