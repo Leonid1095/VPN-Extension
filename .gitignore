@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+*.zip
 
 # Secrets / credentials — never commit
 .env
