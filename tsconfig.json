@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["dom", "es2018"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react",
+    "allowJs": true,
+    "types": ["webextension-polyfill-ts"]
+  },
+  "include": [
+    "src/background/**/*",
+    "src/popup/popup.tsx",
+    "src/popup/popup.html",
+    "src/common/**/*",
+    "src/lib/proxy/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/options",
+    "src/content-scripts",
+    "src/lib/vless",
+    "src/lib/zapret",
+    "src/popup/components",
+    "native-messaging",
+    "installer",
+    "zapret-discord-youtube-1.9.0b"
+  ]
+}

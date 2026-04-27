@@ -1,0 +1,49 @@
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+module.exports = (env, argv) => ({
+    mode: argv && argv.mode === 'production' ? 'production' : 'development',
+    devtool: argv && argv.mode === 'production' ? false : 'cheap-module-source-map',
+    entry: {
+        background: './src/background/background.ts',
+        popup: './src/popup/popup.tsx',
+    },
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: '[name].js',
+    },
+    resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    },
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+        ],
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: path.resolve(__dirname, 'src/manifest.json'),
+                    to: path.resolve(__dirname, 'dist'),
+                },
+                {
+                    from: path.resolve(__dirname, 'src/assets'),
+                    to: path.resolve(__dirname, 'dist/assets'),
+                },
+            ],
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/popup/popup.html',
+            filename: 'popup.html',
+            chunks: ['popup'],
+        }),
+    ],
+});
