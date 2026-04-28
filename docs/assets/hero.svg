@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-label="PLGames Connect — Network Profile Manager">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/>
+      <stop offset="0.55" stop-color="#312e81"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="logoBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dx="0" dy="10"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="360" fill="url(#bg)"/>
+  <circle cx="1080" cy="180" r="260" fill="url(#glow)"/>
+  <circle cx="200"  cy="60"  r="180" fill="url(#glow)"/>
+
+  <!-- Decorative grid -->
+  <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+    <path d="M0 80 H1280 M0 160 H1280 M0 240 H1280 M0 320 H1280"/>
+    <path d="M120 0 V360 M280 0 V360 M440 0 V360 M600 0 V360 M760 0 V360 M920 0 V360 M1080 0 V360"/>
+  </g>
+
+  <!-- Left side: brand -->
+  <g transform="translate(80,100)">
+    <!-- Logo -->
+    <g transform="translate(0,0)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="96" height="96" rx="22" fill="url(#logoBg)"/>
+      <path d="M28.8 17.25 L28.8 78.75 M28.8 19.2 a22.5 22.5 0 0 1 22.5 22.5 a22.5 22.5 0 0 1 -22.5 22.5"
+            stroke="#fff" stroke-width="15.4" stroke-linecap="round" fill="none"/>
+      <circle cx="75" cy="75" r="10.5" fill="#10b981" stroke="#fff" stroke-width="3"/>
+    </g>
+
+    <!-- Wordmark -->
+    <text x="120" y="44" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="42" font-weight="800" letter-spacing="-1.5">PLGames Connect</text>
+    <text x="120" y="78" fill="#c7d2fe" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="20" font-weight="500" letter-spacing="0.5">Network Profile Manager · Browser-only</text>
+
+    <!-- Feature pills -->
+    <g transform="translate(120, 110)" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="13" font-weight="600">
+      <g transform="translate(0,0)">
+        <rect width="148" height="32" rx="16" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.16)"/>
+        <text x="16" y="21" fill="#fff">⚡  Manifest V3</text>
+      </g>
+      <g transform="translate(160,0)">
+        <rect width="172" height="32" rx="16" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.16)"/>
+        <text x="16" y="21" fill="#fff">🛡  Bring your own server</text>
+      </g>
+      <g transform="translate(344,0)">
+        <rect width="166" height="32" rx="16" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.16)"/>
+        <text x="16" y="21" fill="#fff">★  PLGames Pro tier</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right side: mock popup -->
+  <g transform="translate(880, 36)" filter="url(#softShadow)">
+    <rect width="320" height="288" rx="18" fill="#f5f6fb"/>
+
+    <!-- Popup header -->
+    <g transform="translate(14,14)">
+      <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#logoBg)"/>
+      <path d="M9.6 5.75 L9.6 26.25 M9.6 6.4 a7.5 7.5 0 0 1 7.5 7.5 a7.5 7.5 0 0 1 -7.5 7.5"
+            stroke="#fff" stroke-width="5.1" stroke-linecap="round" fill="none"/>
+      <circle cx="25" cy="25" r="3.5" fill="#10b981" stroke="#fff" stroke-width="1"/>
+      <text x="42" y="14" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#0f172a">PLGames Connect</text>
+      <text x="42" y="28" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="10" fill="#64748b">Network Profile Manager</text>
+      <g transform="translate(232,4)">
+        <rect width="74" height="22" rx="11" fill="#d1fae5"/>
+        <circle cx="14" cy="11" r="3.5" fill="#10b981"/>
+        <text x="22" y="15" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="10" font-weight="700" fill="#065f46">ПОДКЛЮЧЕНО</text>
+      </g>
+    </g>
+
+    <!-- Active card (featured) -->
+    <g transform="translate(14,60)">
+      <rect width="292" height="74" rx="14" fill="url(#card)"/>
+      <g transform="translate(14,12)">
+        <rect width="44" height="18" rx="9" fill="rgba(255,255,255,0.22)"/>
+        <text x="9" y="12" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="9" font-weight="700" fill="#fff">★ PRO</text>
+        <text x="56" y="14" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#fff">PLGames Server</text>
+        <text x="0" y="38" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="rgba(255,255,255,0.85)">https://eu-1.plgames.app:443</text>
+      </g>
+      <g transform="translate(228,22)">
+        <rect width="50" height="28" rx="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.25)"/>
+        <text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="11" font-weight="600" fill="#fff">Откл</text>
+      </g>
+    </g>
+
+    <!-- Profile cards label -->
+    <text x="14" y="152" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="9" font-weight="700" fill="#64748b" letter-spacing="2">ПРОФИЛИ</text>
+
+    <!-- Other profile -->
+    <g transform="translate(14,160)">
+      <rect width="292" height="44" rx="10" fill="#fff" stroke="#e2e8f0"/>
+      <g transform="translate(12,11)">
+        <rect width="40" height="16" rx="8" fill="#eef2ff"/>
+        <text x="9" y="11" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="9" font-weight="700" fill="#4338ca">🛡 BYO</text>
+        <text x="56" y="11" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="12" font-weight="600" fill="#0f172a">My home server</text>
+        <text x="0" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#64748b">https://home.example:443</text>
+      </g>
+      <g transform="translate(238,12)">
+        <rect width="42" height="22" rx="6" fill="#10b981"/>
+        <text x="14" y="15" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="10" font-weight="700" fill="#fff">Вкл</text>
+      </g>
+    </g>
+
+    <!-- Two CTA cards -->
+    <g transform="translate(14,220)">
+      <g>
+        <rect width="140" height="56" rx="12" fill="#fff" stroke="#e2e8f0"/>
+        <text x="14" y="22" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#0f172a">+  Свой сервер</text>
+        <text x="14" y="40" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="9" fill="#64748b">Ссылка или файл</text>
+      </g>
+      <g transform="translate(152,0)">
+        <defs>
+          <linearGradient id="goldCard" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f59e0b"/>
+            <stop offset="1" stop-color="#ea580c"/>
+          </linearGradient>
+        </defs>
+        <rect width="140" height="56" rx="12" fill="url(#goldCard)"/>
+        <text x="14" y="22" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#fff">★  PLGames Pro</text>
+        <text x="14" y="40" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif" font-size="9" fill="#fff" opacity="0.85">Подписка активна</text>
+      </g>
+    </g>
+  </g>
+</svg>

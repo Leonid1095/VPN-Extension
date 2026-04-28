@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600" width="380" height="600">
+  <defs>
+    <filter id="lift"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope="0.16"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="380" height="600" fill="#f5f6fb"/>
+
+  <!-- Header (back button) -->
+  <g transform="translate(8,16)">
+    <path d="M19 8 L13 14 L19 20" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text x="28" y="18" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#4f46e5">Назад</text>
+    <g transform="translate(248,4)">
+      <rect width="98" height="22" rx="11" fill="#e2e8f0"/>
+      <circle cx="14" cy="11" r="3.5" fill="#94a3b8"/>
+      <text x="22" y="15" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#64748b">ОТКЛЮЧЕНО</text>
+    </g>
+  </g>
+
+  <!-- Form card -->
+  <g transform="translate(14,52)" filter="url(#lift)">
+    <rect width="352" height="488" rx="14" fill="#fff" stroke="#e2e8f0"/>
+
+    <!-- Name -->
+    <text x="14" y="26" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="0.6">НАЗВАНИЕ (НЕОБЯЗАТЕЛЬНО)</text>
+    <g transform="translate(14,32)">
+      <rect width="324" height="36" rx="9" fill="#fff" stroke="#cbd5e1"/>
+      <text x="12" y="23" font-family="-apple-system, Inter, sans-serif" font-size="13" fill="#94a3b8">Например: домашний сервер</text>
+    </g>
+
+    <!-- URL -->
+    <text x="14" y="92" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="0.6">ССЫЛКА ПРОКСИ</text>
+    <g transform="translate(14,98)">
+      <rect width="324" height="36" rx="9" fill="#fff" stroke="#4f46e5" stroke-width="1.4"/>
+      <text x="12" y="23" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="#0f172a">https://user:pass@example.com:443</text>
+    </g>
+
+    <!-- Add button -->
+    <g transform="translate(14,148)">
+      <rect width="324" height="38" rx="10" fill="#4f46e5"/>
+      <text x="162" y="24" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#fff" text-anchor="middle">Добавить профиль</text>
+    </g>
+
+    <!-- separator -->
+    <g transform="translate(14,206)">
+      <line x1="0" y1="0" x2="146" y2="0" stroke="#e2e8f0"/>
+      <text x="162" y="4" font-family="-apple-system, Inter, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="2" text-anchor="middle">ИЛИ</text>
+      <line x1="178" y1="0" x2="324" y2="0" stroke="#e2e8f0"/>
+    </g>
+
+    <!-- Drop zone -->
+    <g transform="translate(14,222)">
+      <rect width="324" height="148" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="6 4" stroke-width="2"/>
+      <g transform="translate(150,28)" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" fill="none">
+        <path d="M12 32 V8 M2 18 L12 8 L22 18"/>
+        <path d="M-4 32 V40 a2 2 0 0 0 2 2 H26 a2 2 0 0 0 2 -2 V32"/>
+      </g>
+      <text x="162" y="100" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Перетащи файл с конфигом</text>
+      <text x="162" y="122" font-family="-apple-system, Inter, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">JSON ({scheme, host, port, username, password})</text>
+      <text x="162" y="138" font-family="-apple-system, Inter, sans-serif" font-size="10.5" fill="#94a3b8" text-anchor="middle">или строка ссылки</text>
+    </g>
+
+    <!-- Help text under -->
+    <text x="14" y="408" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#64748b">Поддерживаемые схемы:</text>
+    <g transform="translate(14,418)" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700">
+      <g><rect width="56" height="22" rx="6" fill="#eef2ff"/><text x="28" y="15" fill="#4338ca" text-anchor="middle">HTTPS</text></g>
+      <g transform="translate(64,0)"><rect width="48" height="22" rx="6" fill="#eef2ff"/><text x="24" y="15" fill="#4338ca" text-anchor="middle">HTTP</text></g>
+      <g transform="translate(120,0)"><rect width="64" height="22" rx="6" fill="#eef2ff"/><text x="32" y="15" fill="#4338ca" text-anchor="middle">SOCKS5</text></g>
+      <g transform="translate(192,0)"><rect width="64" height="22" rx="6" fill="#eef2ff"/><text x="32" y="15" fill="#4338ca" text-anchor="middle">SOCKS4</text></g>
+    </g>
+  </g>
+
+  <text x="190" y="566" font-family="-apple-system, Inter, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">PLGames Connect · v2.2.0 · трафик только в браузере</text>
+</svg>

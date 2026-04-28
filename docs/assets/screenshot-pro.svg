@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600" width="380" height="600">
+  <defs>
+    <filter id="lift"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope="0.16"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#ea580c"/></linearGradient>
+  </defs>
+  <rect width="380" height="600" fill="#f5f6fb"/>
+
+  <!-- Back header -->
+  <g transform="translate(8,16)">
+    <path d="M19 8 L13 14 L19 20" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text x="28" y="18" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#4f46e5">Назад</text>
+    <g transform="translate(248,4)">
+      <rect width="98" height="22" rx="11" fill="#d1fae5"/>
+      <circle cx="14" cy="11" r="3.5" fill="#10b981"/>
+      <text x="22" y="15" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#065f46">ПОДКЛЮЧЕНО</text>
+    </g>
+  </g>
+
+  <!-- Card -->
+  <g transform="translate(14,52)" filter="url(#lift)">
+    <rect width="352" height="438" rx="14" fill="#fff" stroke="#e2e8f0"/>
+
+    <!-- Pro heading -->
+    <g transform="translate(14,18)">
+      <path d="M8 0 L10.5 5.7 L17 6.3 L12.2 10.4 L13.5 16.5 L8 13.4 L2.5 16.5 L3.8 10.4 L-1 6.3 L5.5 5.7 Z" fill="#f59e0b" transform="translate(0,4)"/>
+      <text x="24" y="14" font-family="-apple-system, Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a">PLGames Pro</text>
+    </g>
+
+    <!-- Account info card -->
+    <g transform="translate(14,52)">
+      <rect width="324" height="68" rx="10" fill="#eef2ff" stroke="#e2e8f0"/>
+      <g transform="translate(14,16)" font-family="-apple-system, Inter, sans-serif" font-size="12">
+        <text fill="#64748b">Аккаунт</text>
+        <text x="294" y="0" fill="#0f172a" font-weight="700" text-anchor="end">leonid@plgames.app</text>
+        <text y="22" fill="#64748b">Подписка</text>
+        <text x="294" y="22" fill="#065f46" font-weight="700" text-anchor="end">активна до 28.05.2026</text>
+      </g>
+    </g>
+
+    <!-- Description -->
+    <text x="14" y="146" font-family="-apple-system, Inter, sans-serif" font-size="11.5" fill="#64748b">Профиль PLGames Pro добавлен в список</text>
+    <text x="14" y="162" font-family="-apple-system, Inter, sans-serif" font-size="11.5" fill="#64748b">(помечен «PRO»). Включи его на главном экране.</text>
+
+    <!-- Refresh button -->
+    <g transform="translate(14,184)">
+      <rect width="324" height="38" rx="10" fill="#4f46e5"/>
+      <text x="162" y="24" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#fff" text-anchor="middle">Обновить профиль</text>
+    </g>
+
+    <!-- Logout button -->
+    <g transform="translate(14,232)">
+      <rect width="324" height="38" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="162" y="24" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Выйти из аккаунта</text>
+    </g>
+
+    <!-- Plans preview -->
+    <text x="14" y="304" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="0.6">ТАРИФЫ</text>
+    <g transform="translate(14,312)">
+      <rect width="324" height="100" rx="12" fill="url(#gold)"/>
+      <g transform="translate(20,20)" font-family="-apple-system, Inter, sans-serif" fill="#fff">
+        <text font-size="12" font-weight="600" opacity="0.9">PRO · от $4.99 / мес</text>
+        <text y="22" font-size="11" opacity="0.85">• Один клик — готовый профиль</text>
+        <text y="38" font-size="11" opacity="0.85">• Серверы EU / NA / Asia</text>
+        <text y="54" font-size="11" opacity="0.85">• Антифрод-защита и stealth-TLS</text>
+      </g>
+      <g transform="translate(220,30)">
+        <rect width="84" height="42" rx="10" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.3)"/>
+        <text x="42" y="26" font-family="-apple-system, Inter, sans-serif" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">Купить</text>
+      </g>
+    </g>
+  </g>
+
+  <text x="190" y="516" font-family="-apple-system, Inter, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">PLGames Connect · v2.2.0 · трафик только в браузере</text>
+</svg>

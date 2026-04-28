@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600" width="380" height="600">
+  <defs>
+    <linearGradient id="logoBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="goldCard" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+    <filter id="lift"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="380" height="600" fill="#f5f6fb"/>
+
+  <!-- Header -->
+  <g transform="translate(14,14)">
+    <rect width="32" height="32" rx="8" fill="url(#logoBg)"/>
+    <path d="M9.6 5.75 L9.6 26.25 M9.6 6.4 a7.5 7.5 0 0 1 7.5 7.5 a7.5 7.5 0 0 1 -7.5 7.5" stroke="#fff" stroke-width="5.1" stroke-linecap="round" fill="none"/>
+    <circle cx="25" cy="25" r="3.5" fill="#10b981" stroke="#fff" stroke-width="1"/>
+    <text x="42" y="14" font-family="-apple-system, Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a">PLGames Connect</text>
+    <text x="42" y="28" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#64748b">Network Profile Manager</text>
+    <g transform="translate(258,4)">
+      <rect width="98" height="22" rx="11" fill="#d1fae5"/>
+      <circle cx="14" cy="11" r="3.5" fill="#10b981"/>
+      <text x="22" y="15" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#065f46">ПОДКЛЮЧЕНО</text>
+    </g>
+  </g>
+
+  <!-- Featured active card -->
+  <g transform="translate(14,62)" filter="url(#lift)">
+    <rect width="352" height="92" rx="14" fill="url(#card)"/>
+    <g transform="translate(14,12)">
+      <rect width="44" height="20" rx="10" fill="rgba(255,255,255,0.22)"/>
+      <text x="10" y="13" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#fff">★ PRO</text>
+      <text x="58" y="14" font-family="-apple-system, Inter, sans-serif" font-size="15" font-weight="700" fill="#fff">PLGames Server (EU-1)</text>
+      <text x="0" y="48" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="rgba(255,255,255,0.88)">https://eu-1.plgames.app:443</text>
+      <text x="0" y="66" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="rgba(255,255,255,0.7)">user_a8f3</text>
+    </g>
+    <g transform="translate(280,28)">
+      <rect width="58" height="32" rx="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.28)"/>
+      <text x="16" y="21" font-family="-apple-system, Inter, sans-serif" font-size="12" font-weight="600" fill="#fff">Откл</text>
+    </g>
+  </g>
+
+  <!-- Profiles label -->
+  <text x="14" y="180" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="2">ПРОФИЛИ</text>
+
+  <!-- BYO profile card -->
+  <g transform="translate(14,190)">
+    <rect width="352" height="56" rx="10" fill="#fff" stroke="#e2e8f0"/>
+    <g transform="translate(14,12)">
+      <rect width="44" height="18" rx="9" fill="#eef2ff"/>
+      <text x="9" y="12" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#4338ca">🛡 BYO</text>
+      <text x="60" y="12" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#0f172a">My home server</text>
+      <text x="0" y="34" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="#64748b">https://home.example.com:443  ·  admin</text>
+    </g>
+    <g transform="translate(282,17)">
+      <rect width="48" height="24" rx="7" fill="#10b981"/>
+      <text x="16" y="16" font-family="-apple-system, Inter, sans-serif" font-size="11" font-weight="700" fill="#fff">Вкл</text>
+    </g>
+    <g transform="translate(336,17)">
+      <rect width="22" height="24" rx="6" fill="#fff"/>
+      <path d="M348 22 L356 30 M348 30 L356 22" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Second BYO profile card -->
+  <g transform="translate(14,256)">
+    <rect width="352" height="56" rx="10" fill="#fff" stroke="#e2e8f0"/>
+    <g transform="translate(14,12)">
+      <rect width="44" height="18" rx="9" fill="#eef2ff"/>
+      <text x="9" y="12" font-family="-apple-system, Inter, sans-serif" font-size="10" font-weight="700" fill="#4338ca">🛡 BYO</text>
+      <text x="60" y="12" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="600" fill="#0f172a">Office SOCKS5</text>
+      <text x="0" y="34" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="#64748b">socks5://10.0.0.5:1080</text>
+    </g>
+    <g transform="translate(282,17)">
+      <rect width="48" height="24" rx="7" fill="#10b981"/>
+      <text x="16" y="16" font-family="-apple-system, Inter, sans-serif" font-size="11" font-weight="700" fill="#fff">Вкл</text>
+    </g>
+    <g transform="translate(336,17)">
+      <rect width="22" height="24" rx="6" fill="#fff"/>
+      <path d="M348 22 L356 30 M348 30 L356 22" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Two big CTA cards -->
+  <g transform="translate(14,332)">
+    <rect width="171" height="92" rx="14" fill="#fff" stroke="#e2e8f0"/>
+    <text x="14" y="26" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">+  Свой сервер</text>
+    <text x="14" y="48" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#64748b">Вставь ссылку или брось</text>
+    <text x="14" y="64" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#64748b">файл с конфигом своего</text>
+    <text x="14" y="80" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#64748b">прокси или VPS.</text>
+  </g>
+  <g transform="translate(195,332)">
+    <rect width="171" height="92" rx="14" fill="url(#goldCard)"/>
+    <text x="14" y="26" font-family="-apple-system, Inter, sans-serif" font-size="13" font-weight="700" fill="#fff">★  PLGames Pro</text>
+    <text x="14" y="48" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#fff" opacity="0.86">Подписка активна</text>
+    <text x="14" y="64" font-family="-apple-system, Inter, sans-serif" font-size="11" fill="#fff" opacity="0.86">leonid@plgames.app</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="190" y="448" font-family="-apple-system, Inter, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">PLGames Connect · v2.2.0 · трафик только в браузере</text>
+</svg>

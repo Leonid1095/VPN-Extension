@@ -1,0 +1,35 @@
+name: ✨ Feature request
+description: Идея или улучшение
+title: "[Feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Проблема, которую решает фича
+      placeholder: Сейчас приходится руками каждый раз...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Предлагаемое решение
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Альтернативы, которые рассматривал
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Область
+      options:
+        - UI / попап
+        - BYO импорт
+        - PLGames Pro / backend
+        - Server-installer
+        - Документация
+        - Другое
+    validations:
+      required: true

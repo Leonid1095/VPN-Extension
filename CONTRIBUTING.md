@@ -1,99 +1,88 @@
-# Contributing to VPN Browser Extension
+# Contributing to PLGames Connect
 
-Спасибо за интерес к проекту! Мы рады любому вкладу в развитие расширения.
+Спасибо за интерес к проекту. Несколько правил, чтобы PR-ы проходили быстро.
 
-## 🚀 Как внести вклад
+## Быстрый старт
 
-### Сообщить об ошибке
-
-1. Проверьте, что ошибка ещё не была сообщена в [Issues](https://github.com/Leonid1095/VPN-Extension/issues)
-2. Создайте новый Issue с подробным описанием:
-   - Версия Windows и браузера
-   - Шаги для воспроизведения
-   - Ожидаемое и фактическое поведение
-   - Скриншоты (если применимо)
-
-### Предложить новую функцию
-
-1. Откройте [Discussion](https://github.com/Leonid1095/VPN-Extension/discussions) для обсуждения идеи
-2. После одобрения создайте Issue с детальным описанием
-3. Можете сразу приступить к реализации и создать Pull Request
-
-### Создать Pull Request
-
-1. **Fork** репозитория
-2. Создайте ветку для изменений:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Внесите изменения и закоммитьте:
-   ```bash
-   git commit -m "Add: your feature description"
-   ```
-4. Запушьте в свой fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-5. Создайте Pull Request с подробным описанием
-
-## 📋 Правила коммитов
-
-Используйте префиксы для категоризации:
-
-- `Add:` — добавление новой функциональности
-- `Fix:` — исправление багов
-- `Update:` — обновление существующего кода
-- `Refactor:` — рефакторинг без изменения функциональности
-- `Docs:` — обновление документации
-- `Style:` — форматирование кода
-- `Test:` — добавление тестов
-
-Примеры:
-```
-Add: VLESS protocol support
-Fix: Memory leak in background worker
-Update: Zapret to version 1.9.1
-Docs: Improve installation guide
+```bash
+git clone https://github.com/Leonid1095/VPN-Extension.git
+cd VPN-Extension
+npm install
+npm run dev          # webpack watch — пересобирает при сохранении
 ```
 
-## 🧪 Тестирование
+Загрузить в браузер:
 
-Перед созданием PR убедитесь:
+1. `chrome://extensions/`
+2. Включить **Developer mode**
+3. **Load unpacked** → выбрать папку `dist/`
 
-1. ✅ Код собирается без ошибок: `npm run build`
-2. ✅ Линтер проходит: `npm run lint`
-3. ✅ Расширение работает в Chrome и Edge
-4. ✅ Инсталлятор собирается: `makensis installer/VPN-Extension.nsi`
+После каждого пересбора нажми кнопку ⟳ на карточке расширения.
 
-## 📝 Code Style
+## Стиль кода
 
-- **TypeScript**: строгий режим, explicit types
-- **React**: функциональные компоненты с hooks
-- **Форматирование**: 2 spaces, no semicolons (Prettier)
-- **Именование**: camelCase для переменных, PascalCase для компонентов
+- TypeScript, strict mode (`tsconfig.json`).
+- React, функциональные компоненты + hooks.
+- Без сторонних UI-библиотек — все стили inline через design tokens из `popup.tsx`.
+- В UI и коде **не** используем emoji — только inline SVG-глифы.
+- Нейминг: `camelCase` для переменных и функций, `PascalCase` для типов / компонентов.
 
-## 🔧 Структура веток
+## Бренд
 
-- `main` — стабильная версия
-- `develop` — активная разработка
-- `feature/*` — новые функции
-- `bugfix/*` — исправления багов
-- `hotfix/*` — срочные исправления
+- Название продукта пишется как **PLGames Connect** (двумя словами, оба с заглавной).
+- Подзаголовок: «Network Profile Manager».
+- В UI и описании **не** употребляем «VPN», «обход», «блокировка», «РКН». Это сознательное
+  решение для прохождения Web Store-ревью и снижения внимания со стороны DPI-фильтров.
+- В FAQ / технической документации это допустимо, если контекст требует.
 
-## 🎯 Приоритетные задачи
+## Иконы и ассеты
 
-Смотрите Issues с метками:
-- `good first issue` — для новичков
-- `help wanted` — нужна помощь
-- `high priority` — важные задачи
+- Тулбар-иконы рендерятся программно через `tools/build-icons.js`. Перед коммитом:
+  `npm run build:icons` — PNG-ы пересоберутся.
+- Hero-баннер и mockup'ы скриншотов лежат в `docs/assets/` как SVG.
 
-## 📞 Контакты
+## Безопасность — что НЕ коммитить
 
-Вопросы? Обращайтесь:
-- GitHub Discussions
-- GitHub Issues
-- Email: (укажите ваш email)
+- **Реальные домены / IP** в коде, документации, скриншотах. Используй `example.com`,
+  `203.0.113.42` (RFC 5737 TEST-NET-3) или `<DOMAIN>` / `<SERVER_IP>` плейсхолдеры.
+- **Токены, пароли, приватные ключи** — никогда.
+- **Внутренние URL бэкендов** — пока бэкенд не публичный, в коде только
+  `https://api.example.com`-плейсхолдер.
 
----
+`.gitignore` покрывает `*.env`, `*.pem`, `*.key`, `*.crt`, `*.zip`, `dist/`, `node_modules/`.
+Перед коммитом проверь `git status` — там не должно быть лишнего.
 
-Спасибо за вклад в свободный интернет! 🌐
+## Workflow
+
+1. Заведи Issue (или возьми существующий) для обсуждения.
+2. Fork → ветка с осмысленным именем (`feature/per-site-routing`, `fix/onauth-firefox`).
+3. PR в `master`.
+4. CI прогонит сборку.
+5. Минимум один approve.
+
+## Коммиты
+
+Conventional-style префиксы (английские, в lower-case желательно):
+
+| Префикс | Когда |
+|---|---|
+| `feat:` | Новая фича |
+| `fix:` | Багфикс |
+| `refactor:` | Без изменения поведения |
+| `docs:` | Документация / бренд |
+| `chore:` | Сборка, CI, инфраструктура |
+
+## Релизы
+
+Релизы режутся через git-теги:
+
+```bash
+git tag v2.3.0
+git push origin v2.3.0
+```
+
+GitHub Actions соберёт `dist/`, упакует `plgames-connect-vX.Y.Z.zip` и приложит к релизу.
+
+## Лицензия
+
+Контрибутируя, ты соглашаешься, что вклад выходит под [MIT](LICENSE).

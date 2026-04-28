@@ -1,92 +1,275 @@
+<div align="center">
+
+<img src="docs/assets/hero.svg" alt="PLGames Connect — Network Profile Manager" width="100%"/>
+
 # PLGames Connect
 
-[![Release](https://img.shields.io/github/v/release/Leonid1095/VPN-Extension)](https://github.com/Leonid1095/VPN-Extension/releases)
+**Network profile manager for browsers.** Bring your own server or use ours.
 
-> Network profile manager for PLGames players.
-> Manage HTTPS / SOCKS proxy profiles in one click — no native dependencies, no installer, no admin rights.
+[![Release](https://img.shields.io/github/v/release/Leonid1095/VPN-Extension?style=flat-square&color=4f46e5)](https://github.com/Leonid1095/VPN-Extension/releases/latest)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-4f46e5?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![License](https://img.shields.io/github/license/Leonid1095/VPN-Extension?style=flat-square&color=10b981)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/Leonid1095/VPN-Extension?style=flat-square&color=f59e0b)](https://github.com/Leonid1095/VPN-Extension/stargazers)
 
-## Features
+[Скачать релиз](https://github.com/Leonid1095/VPN-Extension/releases/latest) ·
+[Установка](#установка) ·
+[Архитектура](#архитектура) ·
+[Свой сервер](#свой-сервер) ·
+[FAQ](#faq)
 
-- **Bring Your Own Server (BYO).** Paste a `scheme://user:pass@host:port` link
-  or drop a JSON config — done.
-- **PLGames Pro.** Sign in with your account, get a provisioned profile from
-  our backend automatically. No setup required.
-- **Manifest V3** Chrome / Edge / Brave / Yandex / Opera.
-- **No native messaging, no installer, no admin rights, no .exe.**
+</div>
 
-## Install (production)
+---
 
-1. Download the latest `plgames-connect-vX.Y.Z.zip` from
-   [Releases](https://github.com/Leonid1095/VPN-Extension/releases).
-2. Unzip into any folder.
-3. `chrome://extensions/` → enable **Developer mode** → **Load unpacked** → pick
-   the unzipped folder.
-4. Click the toolbar icon → **+ Свой сервер** or **PLGames Pro**.
+## Что это
 
-## Build from source
+**PLGames Connect** — лёгкое браузерное расширение, которое управляет HTTPS / SOCKS-прокси-профилями. Никаких нативных зависимостей, инсталлеров и прав администратора: ставится одним кликом из Chrome Web Store или ZIP-архива.
+
+Два режима:
+
+- 🛡 **BYO (Bring Your Own).** Вставь ссылку `scheme://user:pass@host:port` или брось файл с конфигом — профиль готов.
+- ★ **PLGames Pro.** Войди в аккаунт — расширение само получит выделенный профиль с наших серверов.
+
+---
+
+## Скриншоты
+
+<table>
+<tr>
+<td align="center" width="33%">
+<img src="docs/assets/screenshot-home.svg" alt="Главный экран" width="100%"/>
+<br/><sub><b>Главный экран</b><br/>активный профиль + список</sub>
+</td>
+<td align="center" width="33%">
+<img src="docs/assets/screenshot-byo.svg" alt="Свой сервер" width="100%"/>
+<br/><sub><b>Свой сервер</b><br/>ссылка или файл</sub>
+</td>
+<td align="center" width="33%">
+<img src="docs/assets/screenshot-pro.svg" alt="PLGames Pro" width="100%"/>
+<br/><sub><b>PLGames Pro</b><br/>аккаунт и подписка</sub>
+</td>
+</tr>
+</table>
+
+---
+
+## Возможности
+
+| | |
+|---|---|
+| ⚡ **Manifest V3** | Современный API, готово к Chrome Web Store |
+| 🛡 **Без нативных зависимостей** | Только `chrome.proxy.settings` + `webRequest` |
+| 🔑 **Auto-auth прокси** | `webRequest.onAuthRequired` (asyncBlocking) — креды подставляются автоматически |
+| 📦 **Несколько профилей** | Список + переключатель + быстрый ввод |
+| 🌈 **Динамическая иконка** | Меняет цвет когда подключено / отключено |
+| 🎨 **Premium UI** | Брендовый дизайн, inline SVG, без сторонних UI-библиотек |
+| 🌐 **Любые схемы** | HTTPS, HTTP, SOCKS5, SOCKS4 |
+| ✈️ **Импорт файлом** | JSON конфиг (один или массив профилей) или plain-text URL |
+
+---
+
+## Установка
+
+### Из релиза (рекомендуемый способ)
+
+1. Скачай последний `plgames-connect-vX.Y.Z.zip` со страницы [Releases](https://github.com/Leonid1095/VPN-Extension/releases/latest).
+2. Распакуй в любую папку.
+3. Открой `chrome://extensions/`.
+4. Включи **«Режим разработчика»** (Developer mode) в правом верхнем углу.
+5. Нажми **«Загрузить распакованное»** (Load unpacked) → выбери распакованную папку.
+6. Иконка появится в тулбаре. Готово.
+
+> Совместимо с Chrome / Edge / Brave / Yandex / Opera (Manifest V3).
+
+### Из исходников
 
 ```bash
 git clone https://github.com/Leonid1095/VPN-Extension.git
 cd VPN-Extension
 npm install
-npm run build           # produces dist/ ready for "Load unpacked"
+npm run build           # → dist/
 ```
 
-Build pipeline:
+После сборки `dist/` готов к `Load unpacked`.
 
-1. `npm run build:icons` — pure-Node PNG encoder renders the brand monogram
-   (no `sharp` / no `node-canvas` dependency).
-2. `webpack --mode production` — bundles `background` and `popup` into `dist/`.
+---
 
-## Architecture
+## Использование
+
+### BYO — свой сервер
+
+1. Кликни иконку → **«+ Свой сервер»**.
+2. Вставь ссылку прокси:
+   ```
+   https://username:password@your-server.com:443
+   ```
+3. **Добавить профиль** → на главном экране нажми **Вкл**.
+
+Поддерживаются схемы: `https`, `http`, `socks5`, `socks4`.
+
+#### Импорт из файла
+
+Перетащи на drop-зону `.json` или `.txt`:
+
+```json
+{
+  "name": "Office",
+  "scheme": "https",
+  "host": "proxy.office.example.com",
+  "port": 443,
+  "username": "alice",
+  "password": "secret"
+}
+```
+
+Или массив таких объектов — добавятся все сразу.
+
+### PLGames Pro
+
+1. Кликни **«PLGames Pro»** → введи email и пароль.
+2. Расширение автоматически получит выделенный профиль с нашего сервера и пометит его чипом `PRO`.
+3. Переключение, продление и обновление — в одном экране.
+
+> ℹ️ Сейчас режим Pro работает на моках для разработки. Реальный backend подключится через флаг в [`src/lib/api/managed.ts`](src/lib/api/managed.ts).
+
+---
+
+## Свой сервер
+
+Если хочешь поднять свой прокси под BYO-режим — есть готовый скрипт изолированной установки **NaiveProxy** (Caddy + `forwardproxy@naive`), не ломающий существующий стек на сервере:
+
+```bash
+scp server/install-naive-isolated.sh root@<SERVER_IP>:/root/
+ssh root@<SERVER_IP>
+bash /root/install-naive-isolated.sh proxy.example.com 8445
+```
+
+Скрипт изолирован: ставит свой бинарь в `/opt/naive2/`, слушает только loopback, использует существующий certbot-сертификат через ACL. Откат — одна команда. Подробности в [`server/README.md`](server/README.md).
+
+---
+
+## Архитектура
 
 ```
-popup.tsx (React)
-    │
-    ├──► [getSettings, upsertProfile, activate, deactivate, ...]
-    │
-    └──► [managedLogin, managedRefresh, managedLogout]
-                                │
-                                ▼
-background.ts (MV3 service worker)
-    ├──► chrome.proxy.settings           (set / clear proxy)
-    ├──► webRequest.onAuthRequired       (proxy basic auth, asyncBlocking)
-    ├──► storage.local                   (profiles + account)
-    └──► lib/api/managed.ts              (PLGames backend client — currently mocked)
+┌────────────────────────────────────────────────────┐
+│ popup.tsx (React)                                  │
+│  ├── Home screen        → list, activate / deactivate
+│  ├── AddByo screen      → URL parse / drop-file    │
+│  └── Managed screen     → login / refresh / logout │
+└────────────┬───────────────────────────────────────┘
+             │ browser.runtime.sendMessage
+             ▼
+┌────────────────────────────────────────────────────┐
+│ background.ts (MV3 Service Worker)                 │
+│  ├── chrome.proxy.settings           ← apply/clear │
+│  ├── webRequest.onAuthRequired       ← basic auth  │
+│  ├── browser.storage.local           ← persist     │
+│  ├── OffscreenCanvas (icon renderer)               │
+│  └── lib/api/managed.ts              ← Pro backend │
+└────────────────────────────────────────────────────┘
 ```
 
-### Managed backend contract
+### Контракт Pro-бэкенда
 
-In `src/lib/api/managed.ts`:
+В [`src/lib/api/managed.ts`](src/lib/api/managed.ts) (сейчас mocked, переключается флагом `MOCK = false`):
 
-| Method                            | Body / Header              | Response                          |
-|-----------------------------------|----------------------------|-----------------------------------|
-| `POST /api/auth/login`            | `{ email, password }`      | `{ token, account }`              |
-| `POST /api/auth/logout`           | Authorization: Bearer …    | 200                               |
-| `GET  /api/account`               | Authorization: Bearer …    | `{ account }`                     |
-| `GET  /api/profile`               | Authorization: Bearer …    | `{ profile }`                     |
+| Метод | Тело / заголовок | Ответ |
+|---|---|---|
+| `POST /api/auth/login` | `{ email, password }` | `{ token, account }` |
+| `POST /api/auth/logout` | `Authorization: Bearer …` | `200 OK` |
+| `GET /api/account` | `Authorization: Bearer …` | `{ account }` |
+| `GET /api/profile` | `Authorization: Bearer …` | `{ profile }` |
 
-`account = { email, subscribedUntil? (unix ms) }`,
-`profile = { scheme, host, port, username?, password?, name? }`.
+```ts
+account = { email: string; subscribedUntil?: number /* unix ms */ }
+profile = { scheme, host, port, username?, password?, name? }
+```
 
-Set `MOCK = false` and `BACKEND_URL = '...'` in that file when the API ships.
+---
 
-## Server side (BYO)
+## Разработка
 
-This extension is a **client only**. To use BYO mode you (or the user) need a
-proxy server. See [`server/README.md`](server/README.md) for an isolated
-NaiveProxy install script that works alongside an existing nginx + Caddy stack
-without breaking it.
+```bash
+npm run dev             # webpack watch mode
+npm run build           # production build (icons + webpack)
+npm run build:icons     # regenerate brand icons
+npm run lint
+```
 
-## Limitations
+Структура:
 
-- **Browser-only traffic.** We use `chrome.proxy.settings`, which routes only
-  what the browser fetches. System apps (Telegram, Discord, etc.) are not
-  affected.
-- **Schemes supported:** `https`, `http`, `socks5`, `socks4`. VLESS / Trojan /
-  Shadowsocks **cannot** run inside an MV3 extension — they need a native
-  client. This is by design.
+```
+src/
+  background/    # MV3 service worker
+  popup/         # React UI
+  common/        # types, storage, parser
+  lib/
+    proxy/       # chrome.proxy.settings glue
+    api/         # PLGames Pro backend client
+  assets/        # icons (auto-generated by tools/build-icons.js)
+tools/
+  build-icons.js # pure-Node PNG renderer (no deps)
+server/
+  install-naive-isolated.sh    # BYO server install script
+docs/
+  assets/        # README hero + screenshots
+```
 
-## License
+---
 
-MIT — see [LICENSE](LICENSE).
+## FAQ
+
+<details>
+<summary><b>Почему не VLESS / Trojan / Shadowsocks?</b></summary>
+
+Браузерное расширение в MV3 не имеет TCP-сокета и не управляет TLS-handshake'ом. Все «настоящие» VPN-протоколы требуют нативного клиента, который пользователь вынужден ставить отдельно — это противоречит идее «один клик из Web Store». Поэтому используем стандартные HTTPS / SOCKS5 прокси, которые встроены в `chrome.proxy.settings` API.
+
+</details>
+
+<details>
+<summary><b>Защищён ли мой пароль?</b></summary>
+
+Креденшелы хранятся в `browser.storage.local` (sandbox расширения). Они не покидают браузер кроме момента, когда `webRequest.onAuthRequired` отправляет их на прокси-сервер по уже установленному TLS-каналу.
+
+</details>
+
+<details>
+<summary><b>Расширение туннелирует Telegram / Discord / системный трафик?</b></summary>
+
+Нет. Только то, что запрашивает сам браузер. Это фундаментальное ограничение MV3 API.
+
+</details>
+
+<details>
+<summary><b>Будет ли работать в РФ?</b></summary>
+
+Зависит от твоего сервера, не от расширения. Расширение — клиент, его не палит DPI. Сервер должен быть устойчив к блокировкам — рекомендуем NaiveProxy (на 443 порту, с реальным сайтом-заглушкой и Chrome TLS-fingerprint).
+
+</details>
+
+---
+
+## Roadmap
+
+- [x] Manifest V3 + chrome.proxy.settings
+- [x] Auto-auth через webRequest.onAuthRequired
+- [x] BYO режим: URL + файл
+- [x] PLGames Pro stub
+- [x] Branded UI и иконография
+- [x] Изолированный server-installer (NaiveProxy)
+- [ ] Реальный backend для Pro
+- [ ] Per-site routing (PAC-список доменов через прокси)
+- [ ] Web Store листинг
+- [ ] Локализация EN / RU / KZ
+
+---
+
+## Лицензия
+
+[MIT](LICENSE) © PLGames
+
+---
+
+<div align="center">
+<sub>Made with care · <a href="https://github.com/Leonid1095/VPN-Extension/issues/new">сообщить об ошибке</a></sub>
+</div>

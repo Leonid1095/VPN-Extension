@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist
+        run: |
+          ls -la dist/
+          test -f dist/manifest.json
+          test -f dist/background.js
+          test -f dist/popup.js
+          test -f dist/popup.html
+          test -d dist/assets
+
+      - name: Package zip
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          cd dist
+          zip -r "../plgames-connect-v${VERSION}.zip" .
+          cd ..
+          ls -lh plgames-connect-v${VERSION}.zip
+          echo "ZIP_NAME=plgames-connect-v${VERSION}.zip" >> "$GITHUB_ENV"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}
+          if-no-files-found: error
+
+      - name: Attach to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
