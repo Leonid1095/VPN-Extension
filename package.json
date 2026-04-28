@@ -1,7 +1,7 @@
 {
-  "name": "web-proxy-manager",
-  "version": "2.1.0",
-  "description": "Lightweight HTTPS/SOCKS proxy client browser extension.",
+  "name": "plgames-connect",
+  "version": "2.2.0",
+  "description": "PLGames Connect — network profile manager for browsers (HTTPS/SOCKS proxy client).",
   "main": "src/background/background.ts",
   "scripts": {
     "build": "npm run build:icons && webpack --mode production",

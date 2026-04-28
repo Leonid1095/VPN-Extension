@@ -7,194 +7,530 @@ import { BUY_URL } from '../lib/api/managed';
 
 type Screen = 'home' | 'addByo' | 'managed';
 
-const styles = {
+const PRODUCT_NAME = 'PLGames Connect';
+const PRODUCT_SUBTITLE = 'Network Profile Manager';
+
+// ============================================================================
+// design tokens
+// ============================================================================
+
+const tokens = {
+    color: {
+        bg: '#f5f6fb',
+        surface: '#ffffff',
+        surfaceAlt: '#f8fafc',
+        border: '#e2e8f0',
+        borderStrong: '#cbd5e1',
+        text: '#0f172a',
+        textMuted: '#64748b',
+        textSubtle: '#94a3b8',
+        primary: '#4f46e5',
+        primaryHover: '#4338ca',
+        primarySoft: '#eef2ff',
+        accent: '#10b981',
+        accentSoft: '#d1fae5',
+        gold: '#f59e0b',
+        goldSoft: '#fef3c7',
+        danger: '#dc2626',
+        dangerSoft: '#fee2e2',
+    },
+    radius: { sm: '6px', md: '10px', lg: '14px', xl: '18px' },
+    shadow: {
+        sm: '0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)',
+        md: '0 4px 12px rgba(15,23,42,0.08)',
+        lg: '0 10px 30px rgba(79,70,229,0.18)',
+        ring: '0 0 0 3px rgba(79,70,229,0.18)',
+    },
+};
+
+// ============================================================================
+// inline SVG glyphs (no emoji, sharp at any DPI)
+// ============================================================================
+
+const Logo: React.FC<{ size?: number }> = ({ size = 32 }) => (
+    <svg width={size} height={size} viewBox="0 0 128 128" aria-hidden>
+        <defs>
+            <linearGradient id="logo-bg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#6366f1" />
+                <stop offset="1" stopColor="#4338ca" />
+            </linearGradient>
+        </defs>
+        <rect width="128" height="128" rx="28" fill="url(#logo-bg)" />
+        <path
+            d="M38.4 23 L38.4 105 M38.4 25.6 a30 30 0 0 1 30 30 a30 30 0 0 1 -30 30"
+            stroke="#fff"
+            strokeWidth="20.5"
+            strokeLinecap="round"
+            fill="none"
+        />
+        <circle cx="100" cy="100" r="14" fill="#10b981" stroke="#fff" strokeWidth="4" />
+    </svg>
+);
+
+const IconShield: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+            d="M12 2 L4 5 V11 C4 16 7.5 20.5 12 22 C16.5 20.5 20 16 20 11 V5 Z"
+            stroke={color}
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M9 12 L11 14 L15 10"
+            stroke={color}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const IconPower: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 4 V12" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        <path
+            d="M7 7 a8 8 0 1 0 10 0"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+        />
+    </svg>
+);
+
+const IconPlus: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 5 V19 M5 12 H19" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+);
+
+const IconStar: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+        <path
+            d="M12 3 L14.6 9.1 L21 9.7 L16.2 14 L17.7 20.3 L12 17 L6.3 20.3 L7.8 14 L3 9.7 L9.4 9.1 Z"
+            fill={color}
+        />
+    </svg>
+);
+
+const IconArrowLeft: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+            d="M15 6 L9 12 L15 18"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const IconClose: React.FC<{ size?: number; color?: string }> = ({ size = 12, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+            d="M6 6 L18 18 M6 18 L18 6"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+    </svg>
+);
+
+const IconUpload: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+            d="M12 16 V4 M7 9 L12 4 L17 9"
+            stroke={color}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M5 16 V19 a1 1 0 0 0 1 1 H18 a1 1 0 0 0 1 -1 V16"
+            stroke={color}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+        />
+    </svg>
+);
+
+const IconSpark: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+            d="M13 2 L6 13 H12 L11 22 L18 11 H12 L13 2 Z"
+            fill={color}
+            stroke={color}
+            strokeWidth="1"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+// ============================================================================
+// styles
+// ============================================================================
+
+const S = {
     container: {
         width: '380px',
-        padding: '16px',
-        fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        background: '#f8f9fa',
-        color: '#212529',
-        boxSizing: 'border-box' as const,
-    },
-    header: {
-        display: 'flex' as const,
+        padding: '14px',
+        background: tokens.color.bg,
+        color: tokens.color.text,
+    } as React.CSSProperties,
+
+    headerBar: {
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '12px',
+        marginBottom: '14px',
+        gap: '10px',
+    } as React.CSSProperties,
+    brand: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        flex: 1,
+        minWidth: 0,
+    } as React.CSSProperties,
+    brandTextWrap: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        minWidth: 0,
+        lineHeight: 1.15,
     },
-    backLink: {
-        background: 'transparent',
-        border: 'none',
-        color: '#0d6efd',
-        cursor: 'pointer',
-        fontSize: '13px',
-        padding: 0,
-        textDecoration: 'none',
-    },
-    title: { margin: 0, fontSize: '16px', fontWeight: 600 },
-    badge: (on: boolean) => ({
+    brandTitle: { fontSize: '14px', fontWeight: 700, letterSpacing: '-0.01em' } as React.CSSProperties,
+    brandSubtitle: {
+        fontSize: '11px',
+        color: tokens.color.textMuted,
+        marginTop: '1px',
+    } as React.CSSProperties,
+    statusPill: (on: boolean): React.CSSProperties => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
         padding: '4px 10px',
-        borderRadius: '12px',
+        borderRadius: '999px',
         fontSize: '11px',
         fontWeight: 600,
-        background: on ? '#059669' : '#6c757d',
-        color: 'white',
+        letterSpacing: '0.02em',
+        background: on ? tokens.color.accentSoft : '#e2e8f0',
+        color: on ? '#065f46' : tokens.color.textMuted,
     }),
-    card: {
-        background: 'white',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '12px',
-        marginBottom: '8px',
-    },
-    cardActive: {
-        border: '1px solid #059669',
-        boxShadow: '0 0 0 2px rgba(5,150,105,0.15)',
-    },
-    profileRow: {
-        display: 'flex' as const,
-        justifyContent: 'space-between',
+    statusDot: (on: boolean): React.CSSProperties => ({
+        width: '7px',
+        height: '7px',
+        borderRadius: '50%',
+        background: on ? tokens.color.accent : tokens.color.textSubtle,
+    }),
+
+    backBtn: {
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
-    },
-    profileMain: { flex: 1, minWidth: 0 },
-    profileName: { fontWeight: 600, fontSize: '13px', wordBreak: 'break-word' as const },
-    profileMeta: { fontSize: '11px', color: '#6b7280', marginTop: '2px' },
-    sourceTag: (managed: boolean) => ({
-        display: 'inline-block',
-        padding: '1px 6px',
-        borderRadius: '4px',
-        fontSize: '10px',
-        fontWeight: 600,
-        background: managed ? '#fef3c7' : '#dbeafe',
-        color: managed ? '#92400e' : '#1e40af',
-        marginRight: '6px',
-        verticalAlign: 'middle',
-    }),
-    btnRow: { display: 'flex' as const, gap: '6px' },
-    btn: {
-        padding: '6px 10px',
+        gap: '4px',
+        background: 'transparent',
         border: 'none',
-        borderRadius: '6px',
+        padding: '4px 6px',
+        marginLeft: '-6px',
+        color: tokens.color.primary,
+        fontSize: '13px',
+        fontWeight: 600,
+        cursor: 'pointer',
+        borderRadius: tokens.radius.sm,
+    } as React.CSSProperties,
+
+    activeCard: {
+        background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+        color: '#fff',
+        borderRadius: tokens.radius.lg,
+        padding: '14px',
+        marginBottom: '14px',
+        boxShadow: tokens.shadow.lg,
+    } as React.CSSProperties,
+    activeRow: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: '10px',
+    } as React.CSSProperties,
+    activeHead: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' } as React.CSSProperties,
+    activeName: { fontSize: '15px', fontWeight: 700 } as React.CSSProperties,
+    activeMeta: {
+        fontSize: '12px',
+        opacity: 0.85,
+        wordBreak: 'break-word' as const,
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+    } as React.CSSProperties,
+    activeDisconnect: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px',
+        background: 'rgba(255,255,255,0.18)',
+        color: '#fff',
+        border: '1px solid rgba(255,255,255,0.25)',
+        borderRadius: '8px',
+        padding: '6px 10px',
         fontSize: '12px',
         fontWeight: 600,
         cursor: 'pointer',
-    },
-    btnPrimary: { background: '#0d6efd', color: 'white' },
-    btnSuccess: { background: '#059669', color: 'white' },
-    btnDanger: { background: '#dc3545', color: 'white' },
-    btnNeutral: { background: '#e5e7eb', color: '#212529' },
-    btnGhost: { background: 'transparent', color: '#6b7280', padding: '4px 6px' },
-    bigButton: {
-        width: '100%',
-        padding: '14px',
+        whiteSpace: 'nowrap' as const,
+    } as React.CSSProperties,
+
+    sectionLabel: {
+        fontSize: '10.5px',
+        fontWeight: 700,
+        color: tokens.color.textMuted,
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.08em',
+        margin: '4px 0 8px',
+    } as React.CSSProperties,
+
+    profileCard: {
+        background: tokens.color.surface,
+        border: `1px solid ${tokens.color.border}`,
+        borderRadius: tokens.radius.md,
+        padding: '11px 12px',
+        marginBottom: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        transition: 'transform 120ms ease, box-shadow 120ms ease',
+    } as React.CSSProperties,
+    profileBody: { flex: 1, minWidth: 0 } as React.CSSProperties,
+    profileTitleRow: { display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' as const },
+    profileTitle: {
+        fontSize: '13px',
+        fontWeight: 600,
+        color: tokens.color.text,
+        wordBreak: 'break-word' as const,
+    } as React.CSSProperties,
+    profileMeta: {
+        fontSize: '11px',
+        color: tokens.color.textMuted,
+        marginTop: '2px',
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+        wordBreak: 'break-all' as const,
+    } as React.CSSProperties,
+
+    sourceTag: (variant: 'byo' | 'pro'): React.CSSProperties => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px',
+        padding: '2px 7px',
+        borderRadius: '999px',
+        fontSize: '10px',
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        background: variant === 'pro' ? tokens.color.goldSoft : tokens.color.primarySoft,
+        color: variant === 'pro' ? '#92400e' : tokens.color.primaryHover,
+    }),
+
+    iconBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '28px',
+        height: '28px',
+        borderRadius: '8px',
+        background: 'transparent',
         border: 'none',
-        borderRadius: '10px',
+        color: tokens.color.textSubtle,
+        cursor: 'pointer',
+    } as React.CSSProperties,
+    btnPrimary: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '7px 12px',
+        background: tokens.color.primary,
+        color: '#fff',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '12px',
         fontWeight: 600,
         cursor: 'pointer',
-        fontSize: '14px',
-        marginTop: '8px',
-        textAlign: 'left' as const,
-        display: 'flex' as const,
+    } as React.CSSProperties,
+    btnGhost: {
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '12px',
-    },
-    bigPrimary: { background: '#0d6efd', color: 'white' },
-    bigManaged: {
-        background: 'linear-gradient(135deg,#10b981,#059669)',
-        color: 'white',
-    },
-    bigEmoji: { fontSize: '22px' },
-    bigText: { display: 'flex' as const, flexDirection: 'column' as const, gap: '2px' },
-    bigSubtitle: { fontSize: '11px', opacity: 0.85, fontWeight: 400 },
-    formCard: {
-        background: 'white',
-        border: '1px solid #cfd4da',
+        gap: '6px',
+        padding: '7px 12px',
+        background: tokens.color.surfaceAlt,
+        color: tokens.color.text,
+        border: `1px solid ${tokens.color.border}`,
         borderRadius: '8px',
-        padding: '12px',
-        marginBottom: '8px',
-    },
+        fontSize: '12px',
+        fontWeight: 600,
+        cursor: 'pointer',
+    } as React.CSSProperties,
+    btnConnect: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px',
+        padding: '6px 11px',
+        background: tokens.color.accent,
+        color: '#fff',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '12px',
+        fontWeight: 600,
+        cursor: 'pointer',
+    } as React.CSSProperties,
+
+    bigCardPair: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '10px',
+        marginTop: '12px',
+    } as React.CSSProperties,
+    bigCard: (variant: 'byo' | 'pro'): React.CSSProperties => ({
+        background:
+            variant === 'pro'
+                ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)'
+                : tokens.color.surface,
+        color: variant === 'pro' ? '#fff' : tokens.color.text,
+        border:
+            variant === 'pro' ? 'none' : `1px solid ${tokens.color.border}`,
+        borderRadius: tokens.radius.lg,
+        padding: '14px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        boxShadow: variant === 'pro' ? '0 8px 22px rgba(234,88,12,0.25)' : tokens.shadow.sm,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        minHeight: '88px',
+    }),
+    bigCardTitle: {
+        fontSize: '13px',
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+    } as React.CSSProperties,
+    bigCardDesc: {
+        fontSize: '11px',
+        opacity: 0.78,
+        lineHeight: 1.35,
+    } as React.CSSProperties,
+
+    formCard: {
+        background: tokens.color.surface,
+        border: `1px solid ${tokens.color.border}`,
+        borderRadius: tokens.radius.lg,
+        padding: '14px',
+        marginBottom: '10px',
+        boxShadow: tokens.shadow.sm,
+    } as React.CSSProperties,
     label: {
         display: 'block',
         fontSize: '11px',
         fontWeight: 600,
-        color: '#374151',
-        marginBottom: '4px',
-    },
+        color: tokens.color.textMuted,
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.05em',
+        marginBottom: '6px',
+    } as React.CSSProperties,
     input: {
         width: '100%',
-        padding: '7px 9px',
+        padding: '9px 11px',
         fontSize: '13px',
-        border: '1px solid #cfd4da',
-        borderRadius: '6px',
-        boxSizing: 'border-box' as const,
-        marginBottom: '8px',
-    },
-    dropZone: {
-        border: '2px dashed #cfd4da',
-        borderRadius: '8px',
-        padding: '14px',
-        textAlign: 'center' as const,
-        background: '#f9fafb',
-        color: '#6b7280',
-        fontSize: '12px',
-        cursor: 'pointer',
-        marginBottom: '8px',
-    },
-    dropZoneActive: { borderColor: '#0d6efd', background: '#eff6ff', color: '#0d6efd' },
-    sep: {
-        display: 'flex' as const,
-        alignItems: 'center',
-        gap: '8px',
-        margin: '10px 0',
-        color: '#9ca3af',
-        fontSize: '11px',
-    },
-    sepLine: { flex: 1, height: '1px', background: '#e5e7eb' },
-    alertErr: {
-        background: '#f8d7da',
-        color: '#721c24',
-        border: '1px solid #f5c6cb',
-        padding: '8px 10px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        marginBottom: '8px',
-    },
-    alertOk: {
-        background: '#d1fae5',
-        color: '#065f46',
-        border: '1px solid #a7f3d0',
-        padding: '8px 10px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        marginBottom: '8px',
-    },
-    sectionTitle: {
-        fontSize: '12px',
+        border: `1px solid ${tokens.color.borderStrong}`,
+        borderRadius: '9px',
+        marginBottom: '10px',
+        background: '#fff',
+        color: tokens.color.text,
+        outline: 'none',
+        transition: 'border-color 120ms ease, box-shadow 120ms ease',
+    } as React.CSSProperties,
+    primaryWide: {
+        width: '100%',
+        padding: '10px 12px',
+        background: tokens.color.primary,
+        color: '#fff',
+        border: 'none',
+        borderRadius: '10px',
+        fontSize: '13px',
         fontWeight: 600,
-        color: '#6b7280',
+        cursor: 'pointer',
+    } as React.CSSProperties,
+    ghostWide: {
+        width: '100%',
+        padding: '10px 12px',
+        background: tokens.color.surfaceAlt,
+        color: tokens.color.text,
+        border: `1px solid ${tokens.color.border}`,
+        borderRadius: '10px',
+        fontSize: '13px',
+        fontWeight: 600,
+        cursor: 'pointer',
+    } as React.CSSProperties,
+
+    drop: (active: boolean): React.CSSProperties => ({
+        border: `2px dashed ${active ? tokens.color.primary : tokens.color.border}`,
+        background: active ? tokens.color.primarySoft : tokens.color.surfaceAlt,
+        color: active ? tokens.color.primary : tokens.color.textMuted,
+        borderRadius: '12px',
+        padding: '16px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        transition: 'border-color 120ms ease, background 120ms ease',
+    }),
+
+    sep: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        margin: '12px 0',
+        color: tokens.color.textSubtle,
+        fontSize: '11px',
         textTransform: 'uppercase' as const,
-        letterSpacing: '0.04em',
-        margin: '12px 0 6px',
-    },
-    footer: {
-        marginTop: '12px',
-        textAlign: 'center' as const,
-        fontSize: '10px',
-        color: '#9ca3af',
-    },
-    statusBlock: {
-        background: 'white',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '12px',
-        marginBottom: '8px',
+        letterSpacing: '0.08em',
+    } as React.CSSProperties,
+    sepLine: { flex: 1, height: '1px', background: tokens.color.border } as React.CSSProperties,
+
+    toast: (kind: 'err' | 'ok'): React.CSSProperties => ({
+        background: kind === 'err' ? tokens.color.dangerSoft : tokens.color.accentSoft,
+        color: kind === 'err' ? '#7f1d1d' : '#065f46',
+        border: `1px solid ${kind === 'err' ? '#fecaca' : '#a7f3d0'}`,
+        padding: '9px 11px',
+        borderRadius: '10px',
         fontSize: '12px',
-    },
-    subscriptionActive: { color: '#065f46', fontWeight: 600 },
-    subscriptionInactive: { color: '#92400e', fontWeight: 600 },
+        marginBottom: '10px',
+    }),
+
+    accountCard: {
+        background: tokens.color.primarySoft,
+        borderRadius: tokens.radius.md,
+        padding: '12px',
+        marginBottom: '10px',
+        border: `1px solid ${tokens.color.border}`,
+    } as React.CSSProperties,
+    accountRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px' } as React.CSSProperties,
+    accountKey: { color: tokens.color.textMuted } as React.CSSProperties,
+
+    footer: {
+        marginTop: '14px',
+        textAlign: 'center' as const,
+        fontSize: '10.5px',
+        color: tokens.color.textSubtle,
+    } as React.CSSProperties,
+
+    emptyCard: {
+        background: tokens.color.surface,
+        border: `1px dashed ${tokens.color.border}`,
+        borderRadius: tokens.radius.lg,
+        padding: '16px',
+        marginBottom: '10px',
+        textAlign: 'center' as const,
+        fontSize: '12.5px',
+        color: tokens.color.textMuted,
+    } as React.CSSProperties,
 };
+
+// ============================================================================
+// app
+// ============================================================================
 
 const App: React.FC = () => {
     const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -238,7 +574,7 @@ const App: React.FC = () => {
             setBusy(true);
             const s = (await browser.runtime.sendMessage({ type: 'activate', id })) as AppSettings;
             setSettings(s);
-            flash('Прокси включён');
+            flash('Подключено');
         } catch (e) {
             flash(`Ошибка: ${(e as Error).message}`, true);
         } finally {
@@ -251,7 +587,7 @@ const App: React.FC = () => {
             setBusy(true);
             const s = (await browser.runtime.sendMessage({ type: 'deactivate' })) as AppSettings;
             setSettings(s);
-            flash('Прокси отключён');
+            flash('Отключено');
         } catch (e) {
             flash(`Ошибка: ${(e as Error).message}`, true);
         } finally {
@@ -276,38 +612,54 @@ const App: React.FC = () => {
     }
 
     if (!settings) {
-        return <div style={styles.container}>Загрузка…</div>;
+        return (
+            <div style={S.container}>
+                <div style={{ textAlign: 'center', padding: '24px', color: tokens.color.textMuted }}>
+                    Загрузка…
+                </div>
+            </div>
+        );
     }
 
     const enabled = settings.enabled && active !== null;
 
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                {screen !== 'home' ? (
+        <div style={S.container}>
+            <header style={S.headerBar}>
+                {screen === 'home' ? (
+                    <div style={S.brand}>
+                        <Logo size={32} />
+                        <div style={S.brandTextWrap}>
+                            <span style={S.brandTitle}>{PRODUCT_NAME}</span>
+                            <span style={S.brandSubtitle}>{PRODUCT_SUBTITLE}</span>
+                        </div>
+                    </div>
+                ) : (
                     <button
-                        style={styles.backLink}
+                        style={S.backBtn}
                         onClick={() => {
                             setScreen('home');
                             setError(null);
                         }}
                     >
-                        ← Назад
+                        <IconArrowLeft />
+                        Назад
                     </button>
-                ) : (
-                    <h1 style={styles.title}>Web Proxy Manager</h1>
                 )}
-                <div style={styles.badge(enabled)}>{enabled ? 'ON' : 'OFF'}</div>
-            </div>
+                <div style={S.statusPill(enabled)}>
+                    <span style={S.statusDot(enabled)} />
+                    {enabled ? 'ПОДКЛЮЧЕНО' : 'ОТКЛЮЧЕНО'}
+                </div>
+            </header>
 
-            {error && <div style={styles.alertErr}>{error}</div>}
-            {info && <div style={styles.alertOk}>{info}</div>}
+            {error && <div style={S.toast('err')}>{error}</div>}
+            {info && <div style={S.toast('ok')}>{info}</div>}
 
             {screen === 'home' && (
                 <HomeScreen
                     settings={settings}
-                    busy={busy}
                     active={active}
+                    busy={busy}
                     onActivate={activate}
                     onDeactivate={deactivate}
                     onRemove={remove}
@@ -336,14 +688,14 @@ const App: React.FC = () => {
                 />
             )}
 
-            <div style={styles.footer}>
-                Трафик идёт только из браузера через выбранный прокси.
-            </div>
+            <div style={S.footer}>PLGames Connect · v2.2.0 · трафик только в браузере</div>
         </div>
     );
 };
 
-// ----- HOME ------------------------------------------------------------------
+// ============================================================================
+// HOME
+// ============================================================================
 
 const HomeScreen: React.FC<{
     settings: AppSettings;
@@ -358,129 +710,153 @@ const HomeScreen: React.FC<{
     const account = settings.account;
     const subscriptionActive =
         account && account.subscribedUntil && account.subscribedUntil > Date.now();
+    const otherProfiles = settings.profiles.filter((p) => p.id !== settings.activeProfileId);
+    const hasAny = settings.profiles.length > 0;
 
     return (
         <>
             {active && (
-                <div style={{ ...styles.card, ...styles.cardActive }}>
-                    <div style={styles.profileRow}>
-                        <div style={styles.profileMain}>
-                            <div style={styles.profileName}>
-                                <span style={styles.sourceTag(active.source === 'managed')}>
-                                    {active.source === 'managed' ? 'наш' : 'свой'}
-                                </span>
-                                {active.name}
+                <div style={S.activeCard}>
+                    <div style={S.activeRow}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={S.activeHead}>
+                                <SourceTag source={active.source} inverted />
+                                <span style={S.activeName}>{active.name}</span>
                             </div>
-                            <div style={styles.profileMeta}>
+                            <div style={S.activeMeta}>
                                 {active.scheme}://{active.host}:{active.port}
-                                {active.username ? ` • ${active.username}` : ''}
+                                {active.username ? `  ·  ${active.username}` : ''}
                             </div>
                         </div>
-                        <button
-                            disabled={busy}
-                            style={{ ...styles.btn, ...styles.btnDanger }}
-                            onClick={onDeactivate}
-                        >
-                            Выкл
+                        <button style={S.activeDisconnect} onClick={onDeactivate} disabled={busy}>
+                            <IconPower size={12} />
+                            Откл
                         </button>
                     </div>
                 </div>
             )}
 
-            {settings.profiles.length > 0 && (
+            {hasAny && otherProfiles.length > 0 && (
                 <>
-                    <div style={styles.sectionTitle}>Профили</div>
-                    {settings.profiles.map((p) => {
-                        const isActive =
-                            settings.enabled && settings.activeProfileId === p.id;
-                        return (
-                            <div
-                                key={p.id}
-                                style={{
-                                    ...styles.card,
-                                    ...(isActive ? styles.cardActive : {}),
-                                }}
-                            >
-                                <div style={styles.profileRow}>
-                                    <div style={styles.profileMain}>
-                                        <div style={styles.profileName}>
-                                            <span
-                                                style={styles.sourceTag(p.source === 'managed')}
-                                            >
-                                                {p.source === 'managed' ? 'наш' : 'свой'}
-                                            </span>
-                                            {p.name}
-                                        </div>
-                                        <div style={styles.profileMeta}>
-                                            {p.scheme}://{p.host}:{p.port}
-                                            {p.username ? ` • ${p.username}` : ''}
-                                        </div>
-                                    </div>
-                                    <div style={styles.btnRow}>
-                                        {!isActive && (
-                                            <button
-                                                disabled={busy}
-                                                style={{
-                                                    ...styles.btn,
-                                                    ...styles.btnSuccess,
-                                                }}
-                                                onClick={() => onActivate(p.id)}
-                                            >
-                                                Вкл
-                                            </button>
-                                        )}
-                                        {p.source === 'byo' && (
-                                            <button
-                                                disabled={busy}
-                                                style={{ ...styles.btn, ...styles.btnGhost }}
-                                                onClick={() => onRemove(p.id)}
-                                                title="Удалить"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    <div style={S.sectionLabel}>Профили</div>
+                    {otherProfiles.map((p) => (
+                        <ProfileCard
+                            key={p.id}
+                            profile={p}
+                            busy={busy}
+                            onActivate={() => onActivate(p.id)}
+                            onRemove={() => onRemove(p.id)}
+                        />
+                    ))}
                 </>
             )}
 
-            <div style={styles.sectionTitle}>Добавить</div>
+            {!hasAny && (
+                <div style={S.emptyCard}>
+                    Профилей пока нет.
+                    <br />
+                    Добавь свой сервер или подключи PLGames Pro.
+                </div>
+            )}
 
-            <button style={{ ...styles.bigButton, ...styles.bigPrimary }} onClick={onAddByo}>
-                <span style={styles.bigEmoji}>🔧</span>
-                <span style={styles.bigText}>
-                    Свой сервер
-                    <span style={styles.bigSubtitle}>
-                        вставь ссылку или брось файл с конфигом
+            <div style={S.bigCardPair}>
+                <button style={S.bigCard('byo')} onClick={onAddByo}>
+                    <span style={S.bigCardTitle}>
+                        <IconPlus size={14} color={tokens.color.primary} />
+                        Свой сервер
                     </span>
-                </span>
-            </button>
+                    <span style={{ ...S.bigCardDesc, color: tokens.color.textMuted }}>
+                        Вставь ссылку или брось файл с конфигом своего прокси/VPS.
+                    </span>
+                </button>
 
-            <button style={{ ...styles.bigButton, ...styles.bigManaged }} onClick={onManaged}>
-                <span style={styles.bigEmoji}>★</span>
-                <span style={styles.bigText}>
-                    Использовать наш VPN
-                    {subscriptionActive ? (
-                        <span style={styles.bigSubtitle}>
-                            активная подписка • {account!.email}
-                        </span>
-                    ) : account ? (
-                        <span style={styles.bigSubtitle}>
-                            войдено как {account.email} • подписки нет
-                        </span>
-                    ) : (
-                        <span style={styles.bigSubtitle}>войти или купить подписку</span>
-                    )}
-                </span>
-            </button>
+                <button style={S.bigCard('pro')} onClick={onManaged}>
+                    <span style={S.bigCardTitle}>
+                        <IconStar size={14} color="#fff" />
+                        PLGames Pro
+                    </span>
+                    <span style={S.bigCardDesc}>
+                        {subscriptionActive
+                            ? `Подписка активна · ${account!.email}`
+                            : account
+                            ? 'Войдено, нужна подписка'
+                            : 'Войти или оформить подписку'}
+                    </span>
+                </button>
+            </div>
         </>
     );
 };
 
-// ----- BYO -------------------------------------------------------------------
+const ProfileCard: React.FC<{
+    profile: ProxyProfile;
+    busy: boolean;
+    onActivate: () => void;
+    onRemove: () => void;
+}> = ({ profile, busy, onActivate, onRemove }) => (
+    <div style={S.profileCard}>
+        <div style={S.profileBody}>
+            <div style={S.profileTitleRow}>
+                <SourceTag source={profile.source} />
+                <span style={S.profileTitle}>{profile.name}</span>
+            </div>
+            <div style={S.profileMeta}>
+                {profile.scheme}://{profile.host}:{profile.port}
+                {profile.username ? `  ·  ${profile.username}` : ''}
+            </div>
+        </div>
+        <button style={S.btnConnect} onClick={onActivate} disabled={busy} title="Подключить">
+            <IconPower size={12} color="#fff" />
+            Вкл
+        </button>
+        {profile.source === 'byo' && (
+            <button style={S.iconBtn} onClick={onRemove} title="Удалить">
+                <IconClose size={14} />
+            </button>
+        )}
+    </div>
+);
+
+const SourceTag: React.FC<{ source: 'byo' | 'managed'; inverted?: boolean }> = ({
+    source,
+    inverted,
+}) => {
+    if (source === 'managed') {
+        return (
+            <span
+                style={{
+                    ...S.sourceTag('pro'),
+                    ...(inverted
+                        ? {
+                              background: 'rgba(255,255,255,0.22)',
+                              color: '#fff',
+                          }
+                        : {}),
+                }}
+            >
+                <IconStar size={10} color={inverted ? '#fff' : '#92400e'} />
+                PRO
+            </span>
+        );
+    }
+    return (
+        <span
+            style={{
+                ...S.sourceTag('byo'),
+                ...(inverted
+                    ? { background: 'rgba(255,255,255,0.22)', color: '#fff' }
+                    : {}),
+            }}
+        >
+            <IconShield size={10} color={inverted ? '#fff' : tokens.color.primaryHover} />
+            BYO
+        </span>
+    );
+};
+
+// ============================================================================
+// BYO
+// ============================================================================
 
 const AddByoScreen: React.FC<{
     onSaved: (s: AppSettings) => void;
@@ -497,7 +873,11 @@ const AddByoScreen: React.FC<{
         try {
             setBusy(true);
             const parsed = parseProxyUrl(url);
-            const profile = buildProfile(parsed, 'byo', name.trim() || `${parsed.scheme}://${parsed.host}`);
+            const profile = buildProfile(
+                parsed,
+                'byo',
+                name.trim() || `${parsed.scheme}://${parsed.host}`,
+            );
             const s = (await browser.runtime.sendMessage({
                 type: 'upsertProfile',
                 profile,
@@ -516,7 +896,6 @@ const AddByoScreen: React.FC<{
             setBusy(true);
             const text = await files[0].text();
             const parsedList = parseProxyFile(text);
-            // массово сохраняем
             let lastSettings: AppSettings | null = null;
             for (const parsed of parsedList) {
                 const profile = buildProfile(
@@ -538,39 +917,38 @@ const AddByoScreen: React.FC<{
     }
 
     return (
-        <div style={styles.formCard}>
-            <label style={styles.label}>Название (необязательно)</label>
+        <div style={S.formCard}>
+            <label style={S.label}>Название (необязательно)</label>
             <input
-                style={styles.input}
+                style={S.input}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Например: домашний сервер"
             />
 
-            <label style={styles.label}>Ссылка прокси</label>
+            <label style={S.label}>Ссылка прокси</label>
             <input
-                style={styles.input}
+                style={S.input}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://user:pass@example.com:443"
                 autoFocus
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
             />
-            <button
-                style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}
-                disabled={busy}
-                onClick={saveFromUrl}
-            >
-                Добавить
+            <button style={S.primaryWide} disabled={busy} onClick={saveFromUrl}>
+                Добавить профиль
             </button>
 
-            <div style={styles.sep}>
-                <span style={styles.sepLine} />
-                <span>или</span>
-                <span style={styles.sepLine} />
+            <div style={S.sep}>
+                <span style={S.sepLine} />
+                или
+                <span style={S.sepLine} />
             </div>
 
             <div
-                style={{ ...styles.dropZone, ...(drag ? styles.dropZoneActive : {}) }}
+                style={S.drop(drag)}
                 onClick={() => fileRef.current?.click()}
                 onDragOver={(e) => {
                     e.preventDefault();
@@ -583,10 +961,14 @@ const AddByoScreen: React.FC<{
                     void handleFiles(e.dataTransfer.files);
                 }}
             >
-                <div style={{ fontSize: '20px', marginBottom: '4px' }}>📁</div>
-                <div>Перетащи файл с конфигом или кликни</div>
-                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
-                    JSON ({'{'}scheme,host,port,username,password{'}'}) или строка ссылки
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                    <IconUpload size={22} color={drag ? tokens.color.primary : tokens.color.textSubtle} />
+                </div>
+                <div style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                    Перетащи файл с конфигом
+                </div>
+                <div style={{ fontSize: '10.5px', marginTop: '4px', color: tokens.color.textSubtle }}>
+                    JSON ({'{'}scheme, host, port, username, password{'}'}) или строка ссылки
                 </div>
                 <input
                     ref={fileRef}
@@ -600,7 +982,9 @@ const AddByoScreen: React.FC<{
     );
 };
 
-// ----- MANAGED ---------------------------------------------------------------
+// ============================================================================
+// MANAGED
+// ============================================================================
 
 const ManagedScreen: React.FC<{
     settings: AppSettings;
@@ -670,7 +1054,6 @@ const ManagedScreen: React.FC<{
     }
 
     function buy() {
-        // открываем страницу покупки в новой вкладке
         if ((chrome as any)?.tabs?.create) {
             (chrome as any).tabs.create({ url: BUY_URL });
         } else {
@@ -680,95 +1063,135 @@ const ManagedScreen: React.FC<{
 
     if (!account) {
         return (
-            <div style={styles.formCard}>
-                <div style={{ fontSize: '13px', marginBottom: '8px' }}>
-                    Войди в свой аккаунт, чтобы получить готовый профиль с нашего сервера.
+            <div style={S.formCard}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '10px',
+                    }}
+                >
+                    <IconStar size={16} color={tokens.color.gold} />
+                    <strong style={{ fontSize: '13px' }}>PLGames Pro</strong>
                 </div>
-                <label style={styles.label}>Email</label>
+                <div
+                    style={{
+                        fontSize: '12px',
+                        color: tokens.color.textMuted,
+                        marginBottom: '12px',
+                        lineHeight: 1.4,
+                    }}
+                >
+                    Готовый профиль с нашего сервера, без настройки. Войди в аккаунт или оформи
+                    подписку.
+                </div>
+
+                <label style={S.label}>Email</label>
                 <input
-                    style={styles.input}
+                    style={S.input}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     autoFocus
+                    autoComplete="email"
                 />
-                <label style={styles.label}>Пароль</label>
+                <label style={S.label}>Пароль</label>
                 <input
-                    style={styles.input}
+                    style={S.input}
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                 />
-                <button
-                    style={{ ...styles.btn, ...styles.btnSuccess, width: '100%' }}
-                    onClick={login}
-                    disabled={busy}
-                >
+                <button style={S.primaryWide} onClick={login} disabled={busy}>
                     Войти
                 </button>
-                <div style={styles.sep}>
-                    <span style={styles.sepLine} />
-                    <span>или</span>
-                    <span style={styles.sepLine} />
+
+                <div style={S.sep}>
+                    <span style={S.sepLine} />
+                    или
+                    <span style={S.sepLine} />
                 </div>
+
                 <button
-                    style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}
+                    style={{
+                        ...S.primaryWide,
+                        background: 'linear-gradient(135deg,#f59e0b,#ea580c)',
+                    }}
                     onClick={buy}
                     disabled={busy}
                 >
-                    Купить подписку
+                    Оформить подписку
                 </button>
             </div>
         );
     }
 
     return (
-        <div style={styles.formCard}>
-            <div style={styles.statusBlock}>
-                <div style={{ marginBottom: '6px' }}>
-                    <span style={{ color: '#6b7280' }}>Аккаунт: </span>
+        <div style={S.formCard}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '10px',
+                }}
+            >
+                <IconStar size={16} color={tokens.color.gold} />
+                <strong style={{ fontSize: '13px' }}>PLGames Pro</strong>
+            </div>
+
+            <div style={S.accountCard}>
+                <div style={{ ...S.accountRow, marginBottom: '4px' }}>
+                    <span style={S.accountKey}>Аккаунт</span>
                     <strong>{account.email}</strong>
                 </div>
-                <div>
-                    <span style={{ color: '#6b7280' }}>Подписка: </span>
+                <div style={S.accountRow}>
+                    <span style={S.accountKey}>Подписка</span>
                     {subscribed ? (
-                        <span style={styles.subscriptionActive}>
+                        <strong style={{ color: '#065f46' }}>
                             активна до{' '}
                             {new Date(account.subscribedUntil!).toLocaleDateString()}
-                        </span>
+                        </strong>
                     ) : (
-                        <span style={styles.subscriptionInactive}>не активна</span>
+                        <strong style={{ color: '#92400e' }}>не активна</strong>
                     )}
                 </div>
             </div>
 
             {subscribed ? (
                 <>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-                        Профиль с нашего сервера уже добавлен в список (помечен «наш»).
-                        Нажми «Вкл» рядом с ним на главном экране.
-                    </div>
-                    <button
-                        style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}
-                        onClick={refresh}
-                        disabled={busy}
+                    <div
+                        style={{
+                            fontSize: '11.5px',
+                            color: tokens.color.textMuted,
+                            marginBottom: '10px',
+                            lineHeight: 1.4,
+                        }}
                     >
+                        Профиль PLGames Pro добавлен в список (помечен «PRO»). Включи его на главном
+                        экране.
+                    </div>
+                    <button style={S.primaryWide} onClick={refresh} disabled={busy}>
                         Обновить профиль
                     </button>
                 </>
             ) : (
                 <button
-                    style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}
+                    style={{
+                        ...S.primaryWide,
+                        background: 'linear-gradient(135deg,#f59e0b,#ea580c)',
+                    }}
                     onClick={buy}
                     disabled={busy}
                 >
-                    Купить подписку
+                    Оформить подписку
                 </button>
             )}
 
             <button
-                style={{ ...styles.btn, ...styles.btnNeutral, width: '100%', marginTop: '8px' }}
+                style={{ ...S.ghostWide, marginTop: '8px' }}
                 onClick={logout}
                 disabled={busy}
             >

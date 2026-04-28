@@ -1,11 +1,6 @@
-// Генератор иконок расширения. Без внешних зависимостей.
-// Рисует "щит с галочкой" программно с супер-сэмплингом 4x для антиалиасинга,
-// упаковывает в PNG через ручной zlib+CRC32 кодер.
-//
-// Запуск:  node tools/build-icons.js
-// Создаёт: src/assets/icon-{16,32,48,128}.png  (нейтральный зелёный)
-//          src/assets/icon-gray-{16,32,48,128}.png  (для иконки disabled)
-//          src/assets/icon.svg  (исходный SVG для документации/обработки в будущем)
+// PLGames Connect — генератор иконок.
+// Pure-Node, без зависимостей. PNG-encoder через zlib + CRC32. 4× super-sampling.
+// Рисует "P"-монограмму бренда на indigo-градиентном скруглённом квадрате.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,25 +8,27 @@ const zlib = require('node:zlib');
 
 const OUT_DIR = path.resolve(__dirname, '..', 'src', 'assets');
 const SIZES = [16, 32, 48, 128];
-const SS = 4; // супер-сэмплинг
+const SS = 4;
 
-// ---- цвета ----
-const PALETTE = {
-    green: {
-        bgTop: [52, 211, 153],
-        bgBot: [5, 150, 105],
-        shieldFill: [255, 255, 255],
-        glyph: [5, 95, 70],
+// ---- бренд-палитра ----
+const BRAND = {
+    active: {
+        bgTop: [99, 102, 241], // indigo-500
+        bgBot: [67, 56, 202], // indigo-700
+        glyph: [255, 255, 255],
+        glyphShadow: [49, 46, 129], // indigo-900 для микроскопической глубины
+        accent: [16, 185, 129], // emerald-500 (бэйдж-точка online)
     },
-    gray: {
-        bgTop: [148, 163, 184],
-        bgBot: [71, 85, 105],
-        shieldFill: [255, 255, 255],
-        glyph: [71, 85, 105],
+    idle: {
+        bgTop: [148, 163, 184], // slate-400
+        bgBot: [71, 85, 105], // slate-600
+        glyph: [255, 255, 255],
+        glyphShadow: [30, 41, 59],
+        accent: null,
     },
 };
 
-// ---- PNG encoder ----
+// ---- PNG encoder (zlib + CRC32) ----
 function crc32(buf) {
     let crc = ~0 >>> 0;
     for (let i = 0; i < buf.length; i++) {
@@ -55,7 +52,7 @@ function encodePNG(width, height, rgba) {
     ihdr.writeUInt32BE(width, 0);
     ihdr.writeUInt32BE(height, 4);
     ihdr[8] = 8;
-    ihdr[9] = 6; // RGBA
+    ihdr[9] = 6;
     ihdr[10] = 0;
     ihdr[11] = 0;
     ihdr[12] = 0;
@@ -74,25 +71,15 @@ function encodePNG(width, height, rgba) {
     ]);
 }
 
-// ---- математика ----
+// ---- math helpers ----
 function mix(a, b, t) {
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
-function distToSegment(px, py, x1, y1, x2, y2) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len2 = dx * dx + dy * dy;
-    let t = len2 ? ((px - x1) * dx + (py - y1) * dy) / len2 : 0;
-    if (t < 0) t = 0;
-    else if (t > 1) t = 1;
-    const cx = x1 + t * dx;
-    const cy = y1 + t * dy;
-    return Math.hypot(px - cx, py - cy);
+function over(dst, src, alpha) {
+    const a = alpha ?? src[3] / 255;
+    return [dst[0] * (1 - a) + src[0] * a, dst[1] * (1 - a) + src[1] * a, dst[2] * (1 - a) + src[2] * a];
 }
 
-/**
- * Точка внутри округлённого квадрата [0..S]².
- */
 function insideRoundedSquare(x, y, S, r) {
     if (x < 0 || x > S || y < 0 || y > S) return false;
     if (x < r && y < r) return Math.hypot(r - x, r - y) <= r;
@@ -103,67 +90,94 @@ function insideRoundedSquare(x, y, S, r) {
 }
 
 /**
- * Силуэт щита внутри [0..S]².
- * Верх — горизонтальная линия, бока — вертикальные, низ — кривая (круговая дуга).
+ * Геометрия "P":
+ *  • вертикальный stem с скруглёнными концами
+ *  • bowl как кольцо (annulus), оставляем только правую половину + верх (x ≥ stem_left)
  */
-function insideShield(x, y, S) {
-    const cx = S / 2;
-    const top = S * 0.22;
-    const sideTop = S * 0.3; // на этой высоте бок переходит в дугу
-    const halfW = S * 0.25;
-    const left = cx - halfW;
-    const right = cx + halfW;
-    if (y < top || y > S * 0.84) return false;
-    // Верхняя часть — простой прямоугольник
-    if (y < sideTop) {
-        return x >= left && x <= right;
+function insideP(x, y, S) {
+    const T = S * 0.16; // толщина штриха
+    const stem_x = S * 0.30;
+    const stem_top = S * 0.20;
+    const stem_bot = S * 0.82;
+    const bowl_cx = stem_x + T / 2;
+    const bowl_cy = S * 0.36;
+    const outer_R = S * 0.24;
+    const inner_R = outer_R - T;
+
+    // stem: rect со скруглёнными концами
+    const stemHalfW = T / 2;
+    const stemCx = stem_x + stemHalfW;
+    if (x >= stem_x && x <= stem_x + T) {
+        // прямая часть
+        if (y >= stem_top + stemHalfW && y <= stem_bot - stemHalfW) return true;
+        // верхний полукруг
+        if (y < stem_top + stemHalfW) {
+            return Math.hypot(x - stemCx, y - (stem_top + stemHalfW)) <= stemHalfW;
+        }
+        // нижний полукруг
+        if (y > stem_bot - stemHalfW) {
+            return Math.hypot(x - stemCx, y - (stem_bot - stemHalfW)) <= stemHalfW;
+        }
     }
-    // Низ — дуга. Центр дуги — на середине, радиус — большой.
-    const arcCx = cx;
-    const arcCy = sideTop - (right - left) * 0.05;
-    const arcR = (right - left) * 1.05;
-    if (Math.hypot(x - arcCx, y - arcCy) > arcR) return false;
-    return x >= left && x <= right;
+
+    // bowl: правая половина annulus + верхний переход
+    if (x >= stem_x) {
+        const dx = x - bowl_cx;
+        const dy = y - bowl_cy;
+        const d = Math.hypot(dx, dy);
+        if (d >= inner_R && d <= outer_R) return true;
+    }
+    return false;
 }
 
-function renderIcon(size, palette) {
+function renderIcon(size, palette, withAccent) {
     const W = size * SS;
     const H = size * SS;
     const data = Buffer.alloc(W * H * 4);
 
     const radius = W * 0.22;
-    // галочка
-    const seg1 = { x1: W * 0.36, y1: H * 0.52, x2: W * 0.46, y2: H * 0.62 };
-    const seg2 = { x1: W * 0.46, y1: H * 0.62, x2: W * 0.66, y2: H * 0.42 };
-    const lineHalf = W * 0.04;
+
+    // accent (точка-индикатор онлайна) в правом-нижнем углу
+    const accentCx = W * 0.78;
+    const accentCy = H * 0.78;
+    const accentR = W * 0.16;
+    const accentRingW = W * 0.06;
 
     for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
             const o = (y * W + x) * 4;
             if (!insideRoundedSquare(x, y, W, radius)) {
-                // прозрачный фон
-                data[o] = 0;
-                data[o + 1] = 0;
-                data[o + 2] = 0;
-                data[o + 3] = 0;
+                data[o] = data[o + 1] = data[o + 2] = data[o + 3] = 0;
                 continue;
             }
+            // фон: вертикальный градиент
             const t = y / H;
             let [r, g, b] = mix(palette.bgTop, palette.bgBot, t);
 
-            if (insideShield(x, y, W)) {
-                r = palette.shieldFill[0];
-                g = palette.shieldFill[1];
-                b = palette.shieldFill[2];
-                // галочка
-                const d1 = distToSegment(x, y, seg1.x1, seg1.y1, seg1.x2, seg1.y2);
-                const d2 = distToSegment(x, y, seg2.x1, seg2.y1, seg2.x2, seg2.y2);
-                if (d1 <= lineHalf || d2 <= lineHalf) {
-                    r = palette.glyph[0];
-                    g = palette.glyph[1];
-                    b = palette.glyph[2];
+            // P-глиф
+            if (insideP(x, y, W)) {
+                r = palette.glyph[0];
+                g = palette.glyph[1];
+                b = palette.glyph[2];
+            }
+
+            // accent (зелёный шарик в углу)
+            if (withAccent && palette.accent) {
+                const ad = Math.hypot(x - accentCx, y - accentCy);
+                if (ad <= accentR) {
+                    if (ad >= accentR - accentRingW) {
+                        // белая обводка (отделяет от фона)
+                        r = 255;
+                        g = 255;
+                        b = 255;
+                    } else {
+                        r = palette.accent[0];
+                        g = palette.accent[1];
+                        b = palette.accent[2];
+                    }
                 }
             }
+
             data[o] = r | 0;
             data[o + 1] = g | 0;
             data[o + 2] = b | 0;
@@ -171,7 +185,7 @@ function renderIcon(size, palette) {
         }
     }
 
-    // Downsample SS×SS -> 1×1 (среднее со сохранением альфы)
+    // Downsample SS×SS среднее
     const out = Buffer.alloc(size * size * 4);
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
@@ -200,26 +214,29 @@ function renderIcon(size, palette) {
     return encodePNG(size, size, out);
 }
 
-function writeSVG() {
-    // Один эталонный SVG для документации/будущего использования.
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+function writeBrandSVG() {
+    // Эталонный SVG логотипа PLGames Connect.
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PLGames Connect">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#34d399"/>
-      <stop offset="1" stop-color="#059669"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4338ca"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="128" height="128" rx="28" fill="url(#g)"/>
-  <path d="M64 28 L96 36 L96 70 Q96 100 64 108 Q32 100 32 70 L32 36 Z" fill="#fff"/>
-  <path d="M46 66 L58 78 L84 52" stroke="#065f46" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="0" y="0" width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- P monogram -->
+  <path d="M38.4 23 L38.4 105 M38.4 25.6 a30 30 0 0 1 30 30 a30 30 0 0 1 -30 30"
+        stroke="#fff" stroke-width="20.5" stroke-linecap="round" fill="none"/>
+  <!-- online accent dot -->
+  <circle cx="100" cy="100" r="14" fill="#10b981" stroke="#fff" stroke-width="4"/>
 </svg>`;
-    fs.writeFileSync(path.join(OUT_DIR, 'icon.svg'), svg);
+    fs.writeFileSync(path.join(OUT_DIR, 'logo.svg'), svg);
 }
 
 function clean() {
-    // выкинуть старые цветовые серии
+    if (!fs.existsSync(OUT_DIR)) return;
     for (const f of fs.readdirSync(OUT_DIR)) {
-        if (/^icon-(blue|gray|green)/.test(f)) {
+        if (/^icon[-.]/.test(f) || f === 'logo.svg') {
             fs.unlinkSync(path.join(OUT_DIR, f));
         }
     }
@@ -228,18 +245,16 @@ function clean() {
 function main() {
     fs.mkdirSync(OUT_DIR, { recursive: true });
     clean();
-    writeSVG();
+    writeBrandSVG();
 
     for (const size of SIZES) {
-        const greenPng = renderIcon(size, PALETTE.green);
-        fs.writeFileSync(path.join(OUT_DIR, `icon-${size}.png`), greenPng);
+        const activePng = renderIcon(size, BRAND.active, true);
+        fs.writeFileSync(path.join(OUT_DIR, `icon-${size}.png`), activePng);
 
-        const grayPng = renderIcon(size, PALETTE.gray);
-        fs.writeFileSync(path.join(OUT_DIR, `icon-gray-${size}.png`), grayPng);
+        const idlePng = renderIcon(size, BRAND.idle, false);
+        fs.writeFileSync(path.join(OUT_DIR, `icon-idle-${size}.png`), idlePng);
 
-        console.log(
-            `icon-${size}.png ${greenPng.length}b   icon-gray-${size}.png ${grayPng.length}b`,
-        );
+        console.log(`icon-${size}.png ${activePng.length}b   icon-idle-${size}.png ${idlePng.length}b`);
     }
 }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PLGames Connect">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- P monogram -->
+  <path d="M38.4 23 L38.4 105 M38.4 25.6 a30 30 0 0 1 30 30 a30 30 0 0 1 -30 30"
+        stroke="#fff" stroke-width="20.5" stroke-linecap="round" fill="none"/>
+  <!-- online accent dot -->
+  <circle cx="100" cy="100" r="14" fill="#10b981" stroke="#fff" stroke-width="4"/>
+</svg>

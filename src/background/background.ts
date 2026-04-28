@@ -18,98 +18,150 @@ import {
 
 declare const chrome: any;
 
-// ----- icon rendering --------------------------------------------------------
+// ----- brand icon rendering --------------------------------------------------
+// Эта функция рисует "P"-монограмму на indigo-градиентном квадрате — точно ту
+// же геометрию, что и tools/build-icons.js, но в OffscreenCanvas, на лету.
 
-function drawIcon(size: number, active: boolean): ImageData {
+interface IconColors {
+    bgTop: string;
+    bgBot: string;
+    glyph: string;
+    accent: string | null;
+}
+
+const ICON_ACTIVE: IconColors = {
+    bgTop: '#6366f1',
+    bgBot: '#4338ca',
+    glyph: '#ffffff',
+    accent: '#10b981',
+};
+const ICON_IDLE: IconColors = {
+    bgTop: '#94a3b8',
+    bgBot: '#475569',
+    glyph: '#ffffff',
+    accent: null,
+};
+
+function drawIcon(size: number, colors: IconColors): ImageData {
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
     if (!ctx) {
-        // Fallback: solid square
+        // Fallback solid colour
         const buf = new Uint8ClampedArray(size * size * 4);
-        const c = active ? [40, 167, 69, 255] : [108, 117, 125, 255];
         for (let i = 0; i < size * size; i++) {
             const o = i * 4;
-            buf[o] = c[0];
-            buf[o + 1] = c[1];
-            buf[o + 2] = c[2];
-            buf[o + 3] = c[3];
+            buf[o] = 99;
+            buf[o + 1] = 102;
+            buf[o + 2] = 241;
+            buf[o + 3] = 255;
         }
         return new ImageData(buf, size, size);
     }
 
     ctx.clearRect(0, 0, size, size);
 
-    // Скруглённый квадрат-фон
+    // 1. скруглённый квадрат — фон
     const r = size * 0.22;
-    const bg = ctx.createLinearGradient(0, 0, 0, size);
-    if (active) {
-        bg.addColorStop(0, '#34d399');
-        bg.addColorStop(1, '#059669');
-    } else {
-        bg.addColorStop(0, '#94a3b8');
-        bg.addColorStop(1, '#475569');
-    }
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.moveTo(r, 0);
-    ctx.lineTo(size - r, 0);
-    ctx.quadraticCurveTo(size, 0, size, r);
-    ctx.lineTo(size, size - r);
-    ctx.quadraticCurveTo(size, size, size - r, size);
-    ctx.lineTo(r, size);
-    ctx.quadraticCurveTo(0, size, 0, size - r);
-    ctx.lineTo(0, r);
-    ctx.quadraticCurveTo(0, 0, r, 0);
-    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, colors.bgTop);
+    grad.addColorStop(1, colors.bgBot);
+    ctx.fillStyle = grad;
+    roundedRectPath(ctx, 0, 0, size, size, r);
     ctx.fill();
 
-    // Щит-глиф (упрощённый): белая фигура в центре
-    ctx.fillStyle = '#ffffff';
-    const cx = size / 2;
-    const top = size * 0.22;
-    const bot = size * 0.82;
-    const w = size * 0.5;
-    ctx.beginPath();
-    ctx.moveTo(cx, top);
-    ctx.lineTo(cx + w / 2, top + size * 0.08);
-    ctx.lineTo(cx + w / 2, size * 0.55);
-    ctx.quadraticCurveTo(cx + w / 2, bot, cx, bot);
-    ctx.quadraticCurveTo(cx - w / 2, bot, cx - w / 2, size * 0.55);
-    ctx.lineTo(cx - w / 2, top + size * 0.08);
-    ctx.closePath();
-    ctx.fill();
+    // 2. "P"-монограмма
+    const T = size * 0.16;
+    const stem_x = size * 0.3;
+    const stem_top = size * 0.2;
+    const stem_bot = size * 0.82;
+    const bowl_cx = stem_x + T / 2;
+    const bowl_cy = size * 0.36;
+    const outer_R = size * 0.24;
 
-    // Галочка / стрелка внутри щита
-    ctx.strokeStyle = active ? '#059669' : '#475569';
-    ctx.lineWidth = Math.max(1.5, size * 0.07);
+    ctx.strokeStyle = colors.glyph;
+    ctx.fillStyle = colors.glyph;
+    ctx.lineWidth = T;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    // вертикальный stem
     ctx.beginPath();
-    ctx.moveTo(cx - size * 0.13, size * 0.5);
-    ctx.lineTo(cx - size * 0.02, size * 0.62);
-    ctx.lineTo(cx + size * 0.16, size * 0.4);
+    ctx.moveTo(stem_x + T / 2, stem_top + T / 2);
+    ctx.lineTo(stem_x + T / 2, stem_bot - T / 2);
     ctx.stroke();
+
+    // bowl как полудуга (от верха stem'а вокруг и обратно к stem'у)
+    ctx.beginPath();
+    ctx.arc(bowl_cx, bowl_cy, outer_R - T / 2, -Math.PI / 2, Math.PI / 2);
+    ctx.stroke();
+
+    // 3. accent dot (online)
+    if (colors.accent) {
+        const ax = size * 0.78;
+        const ay = size * 0.78;
+        const aR = size * 0.16;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(ax, ay, aR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(ax, ay, aR - size * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     return ctx.getImageData(0, 0, size, size);
 }
 
+function roundedRectPath(
+    ctx: OffscreenCanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
 async function refreshIcon(settings: AppSettings): Promise<void> {
     const enabled = settings.enabled && settings.activeProfileId !== null;
+    const colors = enabled ? ICON_ACTIVE : ICON_IDLE;
     const sizes = [16, 32, 48, 128];
     const imageData: Record<number, ImageData> = {};
     for (const s of sizes) {
-        imageData[s] = drawIcon(s, enabled);
+        imageData[s] = drawIcon(s, colors);
     }
     try {
         await browser.action.setIcon({ imageData });
     } catch {
-        // если SW проснулся в момент когда action недоступно — пропускаем
+        /* ignore */
     }
     try {
-        await browser.action.setBadgeText({ text: enabled ? 'ON' : '' });
-        await browser.action.setBadgeBackgroundColor({ color: '#059669' });
+        await browser.action.setBadgeText({ text: '' }); // бренд-точка уже на иконке
     } catch {
-        // ignore
+        /* ignore */
+    }
+    try {
+        const profile = enabled
+            ? settings.profiles.find((p) => p.id === settings.activeProfileId)
+            : undefined;
+        const title = profile
+            ? `PLGames Connect — ${profile.name} (${profile.scheme}://${profile.host}:${profile.port})`
+            : 'PLGames Connect — выключено';
+        await browser.action.setTitle({ title });
+    } catch {
+        /* ignore */
     }
 }
 
@@ -216,21 +268,19 @@ browser.runtime.onMessage.addListener(async (message: any) => {
             return { status };
         }
 
-        // ----- managed VPN ---------------------------------------------------
+        // ----- managed (PLGames Pro) ----------------------------------------
 
         case 'managedLogin': {
             try {
                 const { account } = await apiLogin(message.email, message.password);
                 let settings = await setAccount(account);
-                // Сразу пытаемся подтянуть provisioned-профиль
                 try {
                     const profile = await fetchProvisionedProfile(account);
-                    // Дедуп: убираем старые managed-профили и кладём свежий
                     settings.profiles = settings.profiles.filter((p) => p.source !== 'managed');
                     settings.profiles.push({ ...profile, syncedAt: Date.now() });
                     await saveSettings(settings);
-                } catch (e) {
-                    // профиля пока нет — это ок (например, без подписки)
+                } catch {
+                    /* без подписки или временная ошибка — ок */
                 }
                 return { ok: true, settings };
             } catch (e) {
@@ -264,7 +314,6 @@ browser.runtime.onMessage.addListener(async (message: any) => {
                     await saveSettings(next);
                 } catch (e) {
                     if (e instanceof ManagedApiError) {
-                        // подписки нет — оставляем без managed-профиля
                         next.profiles = next.profiles.filter((p) => p.source !== 'managed');
                         await saveSettings(next);
                     } else {
