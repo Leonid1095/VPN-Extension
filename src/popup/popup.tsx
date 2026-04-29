@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { browser } from 'webextension-polyfill-ts';
-import { AppSettings, ProxyProfile } from '../common/types';
+import { AppSettings, PendingOrder, ProxyProfile } from '../common/types';
 import { buildProfile, parseProxyFile, parseProxyUrl } from '../common/parse';
-import { BUY_URL } from '../lib/api/managed';
+import { Tier } from '../lib/api/managed';
 
 type Screen = 'home' | 'addByo' | 'managed';
 
@@ -44,7 +44,7 @@ const tokens = {
 };
 
 // ============================================================================
-// inline SVG glyphs (no emoji, sharp at any DPI)
+// inline SVG glyphs
 // ============================================================================
 
 const Logo: React.FC<{ size?: number }> = ({ size = 32 }) => (
@@ -67,7 +67,10 @@ const Logo: React.FC<{ size?: number }> = ({ size = 32 }) => (
     </svg>
 );
 
-const IconShield: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+const IconShield: React.FC<{ size?: number; color?: string }> = ({
+    size = 16,
+    color = 'currentColor',
+}) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
         <path
             d="M12 2 L4 5 V11 C4 16 7.5 20.5 12 22 C16.5 20.5 20 16 20 11 V5 Z"
@@ -75,26 +78,14 @@ const IconShield: React.FC<{ size?: number; color?: string }> = ({ size = 16, co
             strokeWidth="1.8"
             strokeLinejoin="round"
         />
-        <path
-            d="M9 12 L11 14 L15 10"
-            stroke={color}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+        <path d="M9 12 L11 14 L15 10" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
 const IconPower: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
         <path d="M12 4 V12" stroke={color} strokeWidth="2" strokeLinecap="round" />
-        <path
-            d="M7 7 a8 8 0 1 0 10 0"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-        />
+        <path d="M7 7 a8 8 0 1 0 10 0" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none" />
     </svg>
 );
 
@@ -115,24 +106,13 @@ const IconStar: React.FC<{ size?: number; color?: string }> = ({ size = 14, colo
 
 const IconArrowLeft: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-            d="M15 6 L9 12 L15 18"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+        <path d="M15 6 L9 12 L15 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
 const IconClose: React.FC<{ size?: number; color?: string }> = ({ size = 12, color = 'currentColor' }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-            d="M6 6 L18 18 M6 18 L18 6"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
-        />
+        <path d="M6 6 L18 18 M6 18 L18 6" stroke={color} strokeWidth="2" strokeLinecap="round" />
     </svg>
 );
 
@@ -145,24 +125,16 @@ const IconUpload: React.FC<{ size?: number; color?: string }> = ({ size = 18, co
             strokeLinecap="round"
             strokeLinejoin="round"
         />
-        <path
-            d="M5 16 V19 a1 1 0 0 0 1 1 H18 a1 1 0 0 0 1 -1 V16"
-            stroke={color}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-        />
+        <path d="M5 16 V19 a1 1 0 0 0 1 1 H18 a1 1 0 0 0 1 -1 V16" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
 );
 
-const IconSpark: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-            d="M13 2 L6 13 H12 L11 22 L18 11 H12 L13 2 Z"
-            fill={color}
-            stroke={color}
-            strokeWidth="1"
-            strokeLinejoin="round"
-        />
+const Spinner: React.FC<{ size?: number }> = ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                strokeDasharray="14 50" fill="none">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/>
+        </circle>
     </svg>
 );
 
@@ -177,7 +149,6 @@ const S = {
         background: tokens.color.bg,
         color: tokens.color.text,
     } as React.CSSProperties,
-
     headerBar: {
         display: 'flex',
         alignItems: 'center',
@@ -185,25 +156,10 @@ const S = {
         marginBottom: '14px',
         gap: '10px',
     } as React.CSSProperties,
-    brand: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        flex: 1,
-        minWidth: 0,
-    } as React.CSSProperties,
-    brandTextWrap: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        minWidth: 0,
-        lineHeight: 1.15,
-    },
+    brand: { display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 } as React.CSSProperties,
+    brandTextWrap: { display: 'flex', flexDirection: 'column' as const, minWidth: 0, lineHeight: 1.15 },
     brandTitle: { fontSize: '14px', fontWeight: 700, letterSpacing: '-0.01em' } as React.CSSProperties,
-    brandSubtitle: {
-        fontSize: '11px',
-        color: tokens.color.textMuted,
-        marginTop: '1px',
-    } as React.CSSProperties,
+    brandSubtitle: { fontSize: '11px', color: tokens.color.textMuted, marginTop: '1px' } as React.CSSProperties,
     statusPill: (on: boolean): React.CSSProperties => ({
         display: 'inline-flex',
         alignItems: 'center',
@@ -222,7 +178,6 @@ const S = {
         borderRadius: '50%',
         background: on ? tokens.color.accent : tokens.color.textSubtle,
     }),
-
     backBtn: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -246,12 +201,7 @@ const S = {
         marginBottom: '14px',
         boxShadow: tokens.shadow.lg,
     } as React.CSSProperties,
-    activeRow: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: '10px',
-    } as React.CSSProperties,
+    activeRow: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' } as React.CSSProperties,
     activeHead: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' } as React.CSSProperties,
     activeName: { fontSize: '15px', fontWeight: 700 } as React.CSSProperties,
     activeMeta: {
@@ -293,7 +243,6 @@ const S = {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        transition: 'transform 120ms ease, box-shadow 120ms ease',
     } as React.CSSProperties,
     profileBody: { flex: 1, minWidth: 0 } as React.CSSProperties,
     profileTitleRow: { display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' as const },
@@ -310,7 +259,6 @@ const S = {
         fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
         wordBreak: 'break-all' as const,
     } as React.CSSProperties,
-
     sourceTag: (variant: 'byo' | 'pro'): React.CSSProperties => ({
         display: 'inline-flex',
         alignItems: 'center',
@@ -324,7 +272,6 @@ const S = {
         background: variant === 'pro' ? tokens.color.goldSoft : tokens.color.primarySoft,
         color: variant === 'pro' ? '#92400e' : tokens.color.primaryHover,
     }),
-
     iconBtn: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -335,32 +282,6 @@ const S = {
         background: 'transparent',
         border: 'none',
         color: tokens.color.textSubtle,
-        cursor: 'pointer',
-    } as React.CSSProperties,
-    btnPrimary: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '7px 12px',
-        background: tokens.color.primary,
-        color: '#fff',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontWeight: 600,
-        cursor: 'pointer',
-    } as React.CSSProperties,
-    btnGhost: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '7px 12px',
-        background: tokens.color.surfaceAlt,
-        color: tokens.color.text,
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontWeight: 600,
         cursor: 'pointer',
     } as React.CSSProperties,
     btnConnect: {
@@ -389,8 +310,7 @@ const S = {
                 ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)'
                 : tokens.color.surface,
         color: variant === 'pro' ? '#fff' : tokens.color.text,
-        border:
-            variant === 'pro' ? 'none' : `1px solid ${tokens.color.border}`,
+        border: variant === 'pro' ? 'none' : `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.lg,
         padding: '14px',
         cursor: 'pointer',
@@ -408,11 +328,7 @@ const S = {
         alignItems: 'center',
         gap: '6px',
     } as React.CSSProperties,
-    bigCardDesc: {
-        fontSize: '11px',
-        opacity: 0.78,
-        lineHeight: 1.35,
-    } as React.CSSProperties,
+    bigCardDesc: { fontSize: '11px', opacity: 0.78, lineHeight: 1.35 } as React.CSSProperties,
 
     formCard: {
         background: tokens.color.surface,
@@ -441,7 +357,6 @@ const S = {
         background: '#fff',
         color: tokens.color.text,
         outline: 'none',
-        transition: 'border-color 120ms ease, box-shadow 120ms ease',
     } as React.CSSProperties,
     primaryWide: {
         width: '100%',
@@ -465,7 +380,6 @@ const S = {
         fontWeight: 600,
         cursor: 'pointer',
     } as React.CSSProperties,
-
     drop: (active: boolean): React.CSSProperties => ({
         border: `2px dashed ${active ? tokens.color.primary : tokens.color.border}`,
         background: active ? tokens.color.primarySoft : tokens.color.surfaceAlt,
@@ -474,9 +388,7 @@ const S = {
         padding: '16px',
         textAlign: 'center',
         cursor: 'pointer',
-        transition: 'border-color 120ms ease, background 120ms ease',
     }),
-
     sep: {
         display: 'flex',
         alignItems: 'center',
@@ -488,7 +400,6 @@ const S = {
         letterSpacing: '0.08em',
     } as React.CSSProperties,
     sepLine: { flex: 1, height: '1px', background: tokens.color.border } as React.CSSProperties,
-
     toast: (kind: 'err' | 'ok'): React.CSSProperties => ({
         background: kind === 'err' ? tokens.color.dangerSoft : tokens.color.accentSoft,
         color: kind === 'err' ? '#7f1d1d' : '#065f46',
@@ -498,7 +409,6 @@ const S = {
         fontSize: '12px',
         marginBottom: '10px',
     }),
-
     accountCard: {
         background: tokens.color.primarySoft,
         borderRadius: tokens.radius.md,
@@ -508,14 +418,12 @@ const S = {
     } as React.CSSProperties,
     accountRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px' } as React.CSSProperties,
     accountKey: { color: tokens.color.textMuted } as React.CSSProperties,
-
     footer: {
         marginTop: '14px',
         textAlign: 'center' as const,
         fontSize: '10.5px',
         color: tokens.color.textSubtle,
     } as React.CSSProperties,
-
     emptyCard: {
         background: tokens.color.surface,
         border: `1px dashed ${tokens.color.border}`,
@@ -525,6 +433,51 @@ const S = {
         textAlign: 'center' as const,
         fontSize: '12.5px',
         color: tokens.color.textMuted,
+    } as React.CSSProperties,
+    tierCard: (active: boolean, popular?: boolean): React.CSSProperties => ({
+        position: 'relative',
+        background: active ? tokens.color.primarySoft : tokens.color.surface,
+        border: `1.5px solid ${active ? tokens.color.primary : tokens.color.border}`,
+        borderRadius: tokens.radius.md,
+        padding: '12px 14px',
+        cursor: 'pointer',
+        marginBottom: '8px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '10px',
+        transition: 'all 120ms ease',
+    }),
+    tierTitle: { fontSize: '13px', fontWeight: 700, color: tokens.color.text } as React.CSSProperties,
+    tierSub: { fontSize: '11px', color: tokens.color.textMuted, marginTop: '2px' } as React.CSSProperties,
+    tierPrice: { fontSize: '15px', fontWeight: 700, color: tokens.color.primary } as React.CSSProperties,
+    tierBadge: {
+        position: 'absolute',
+        top: '-8px',
+        right: '12px',
+        background: tokens.color.gold,
+        color: '#fff',
+        fontSize: '9.5px',
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: '999px',
+        letterSpacing: '0.04em',
+    } as React.CSSProperties,
+    pendingCard: {
+        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+        border: `1px solid ${tokens.color.gold}`,
+        borderRadius: tokens.radius.lg,
+        padding: '14px',
+        marginBottom: '10px',
+    } as React.CSSProperties,
+    pendingHead: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' } as React.CSSProperties,
+    pendingTitle: { fontSize: '13px', fontWeight: 700, color: '#78350f' } as React.CSSProperties,
+    pendingMono: {
+        fontFamily: 'ui-monospace, Menlo, monospace',
+        background: 'rgba(255,255,255,0.6)',
+        padding: '2px 6px',
+        borderRadius: '4px',
+        fontSize: '11px',
     } as React.CSSProperties,
 };
 
@@ -688,7 +641,7 @@ const App: React.FC = () => {
                 />
             )}
 
-            <div style={S.footer}>PLGames Connect · v2.2.0 · трафик только в браузере</div>
+            <div style={S.footer}>PLGames Connect · v2.3.0 · трафик только в браузере</div>
         </div>
     );
 };
@@ -708,8 +661,7 @@ const HomeScreen: React.FC<{
     onManaged: () => void;
 }> = ({ settings, active, busy, onActivate, onDeactivate, onRemove, onAddByo, onManaged }) => {
     const account = settings.account;
-    const subscriptionActive =
-        account && account.subscribedUntil && account.subscribedUntil > Date.now();
+    const subscriptionActive = account && account.subscribedUntil > Date.now();
     const otherProfiles = settings.profiles.filter((p) => p.id !== settings.activeProfileId);
     const hasAny = settings.profiles.length > 0;
 
@@ -751,7 +703,7 @@ const HomeScreen: React.FC<{
                 </>
             )}
 
-            {!hasAny && (
+            {!hasAny && !settings.pendingOrder && (
                 <div style={S.emptyCard}>
                     Профилей пока нет.
                     <br />
@@ -777,10 +729,10 @@ const HomeScreen: React.FC<{
                     </span>
                     <span style={S.bigCardDesc}>
                         {subscriptionActive
-                            ? `Подписка активна · ${account!.email}`
-                            : account
-                            ? 'Войдено, нужна подписка'
-                            : 'Войти или оформить подписку'}
+                            ? `Активна · до ${new Date(account!.subscribedUntil).toLocaleDateString()}`
+                            : settings.pendingOrder
+                            ? 'Ожидаем оплату…'
+                            : 'Купить подписку — один клик'}
                     </span>
                 </button>
             </div>
@@ -817,21 +769,13 @@ const ProfileCard: React.FC<{
     </div>
 );
 
-const SourceTag: React.FC<{ source: 'byo' | 'managed'; inverted?: boolean }> = ({
-    source,
-    inverted,
-}) => {
+const SourceTag: React.FC<{ source: 'byo' | 'managed'; inverted?: boolean }> = ({ source, inverted }) => {
     if (source === 'managed') {
         return (
             <span
                 style={{
                     ...S.sourceTag('pro'),
-                    ...(inverted
-                        ? {
-                              background: 'rgba(255,255,255,0.22)',
-                              color: '#fff',
-                          }
-                        : {}),
+                    ...(inverted ? { background: 'rgba(255,255,255,0.22)', color: '#fff' } : {}),
                 }}
             >
                 <IconStar size={10} color={inverted ? '#fff' : '#92400e'} />
@@ -843,9 +787,7 @@ const SourceTag: React.FC<{ source: 'byo' | 'managed'; inverted?: boolean }> = (
         <span
             style={{
                 ...S.sourceTag('byo'),
-                ...(inverted
-                    ? { background: 'rgba(255,255,255,0.22)', color: '#fff' }
-                    : {}),
+                ...(inverted ? { background: 'rgba(255,255,255,0.22)', color: '#fff' } : {}),
             }}
         >
             <IconShield size={10} color={inverted ? '#fff' : tokens.color.primaryHover} />
@@ -925,7 +867,6 @@ const AddByoScreen: React.FC<{
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Например: домашний сервер"
             />
-
             <label style={S.label}>Ссылка прокси</label>
             <input
                 style={S.input}
@@ -940,13 +881,11 @@ const AddByoScreen: React.FC<{
             <button style={S.primaryWide} disabled={busy} onClick={saveFromUrl}>
                 Добавить профиль
             </button>
-
             <div style={S.sep}>
                 <span style={S.sepLine} />
                 или
                 <span style={S.sepLine} />
             </div>
-
             <div
                 style={S.drop(drag)}
                 onClick={() => fileRef.current?.click()}
@@ -964,11 +903,9 @@ const AddByoScreen: React.FC<{
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
                     <IconUpload size={22} color={drag ? tokens.color.primary : tokens.color.textSubtle} />
                 </div>
-                <div style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                    Перетащи файл с конфигом
-                </div>
+                <div style={{ fontSize: '12.5px', fontWeight: 600 }}>Перетащи файл с конфигом</div>
                 <div style={{ fontSize: '10.5px', marginTop: '4px', color: tokens.color.textSubtle }}>
-                    JSON ({'{'}scheme, host, port, username, password{'}'}) или строка ссылки
+                    JSON ({'{'}scheme, host, port, username, password{'}'}) или ссылка
                 </div>
                 <input
                     ref={fileRef}
@@ -983,7 +920,7 @@ const AddByoScreen: React.FC<{
 };
 
 // ============================================================================
-// MANAGED
+// MANAGED — autonomous purchase flow
 // ============================================================================
 
 const ManagedScreen: React.FC<{
@@ -992,26 +929,64 @@ const ManagedScreen: React.FC<{
     onError: (m: string) => void;
     onInfo: (m: string) => void;
 }> = ({ settings, onChanged, onError, onInfo }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [tiers, setTiers] = useState<Tier[] | null>(null);
+    const [pickedTier, setPickedTier] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
-
     const account = settings.account;
-    const subscribed =
-        account && account.subscribedUntil && account.subscribedUntil > Date.now();
+    const subscribed = account && account.subscribedUntil > Date.now();
+    const pending = settings.pendingOrder;
 
-    async function login() {
-        if (!email.trim() || !password) return onError('Введи email и пароль');
+    // Загружаем тарифы один раз
+    useEffect(() => {
+        if (tiers) return;
+        void (async () => {
+            try {
+                const res = (await browser.runtime.sendMessage({ type: 'fetchTiers' })) as {
+                    ok: boolean;
+                    tiers?: Tier[];
+                    error?: string;
+                };
+                if (res.ok && res.tiers) {
+                    setTiers(res.tiers);
+                    const middle = res.tiers[Math.floor(res.tiers.length / 2)];
+                    if (middle) setPickedTier(middle.key);
+                } else {
+                    onError(res.error || 'Не удалось загрузить тарифы');
+                }
+            } catch (e) {
+                onError((e as Error).message);
+            }
+        })();
+    }, [tiers, onError]);
+
+    // Polling: пока есть pending — раз в 3 сек дёргаем background
+    useEffect(() => {
+        if (!pending) return;
+        const tick = async () => {
+            try {
+                const res = (await browser.runtime.sendMessage({ type: 'pollNow' })) as {
+                    ok: boolean;
+                    settings?: AppSettings;
+                };
+                if (res.ok && res.settings) onChanged(res.settings);
+            } catch {
+                /* ignore */
+            }
+        };
+        const t = setInterval(tick, 3000);
+        return () => clearInterval(t);
+    }, [pending, onChanged]);
+
+    async function buy(tierKey: string) {
         try {
             setBusy(true);
             const res = (await browser.runtime.sendMessage({
-                type: 'managedLogin',
-                email: email.trim(),
-                password,
-            })) as { ok: boolean; settings?: AppSettings; error?: string };
-            if (!res.ok || !res.settings) return onError(res.error || 'Ошибка входа');
+                type: 'createPurchase',
+                tier: tierKey,
+            })) as { ok: boolean; settings?: AppSettings; error?: string; paymentUrl?: string };
+            if (!res.ok || !res.settings) return onError(res.error || 'Не удалось создать заказ');
             onChanged(res.settings);
-            onInfo('Вход выполнен');
+            onInfo('Открыли страницу оплаты');
         } catch (e) {
             onError((e as Error).message);
         } finally {
@@ -1019,20 +994,25 @@ const ManagedScreen: React.FC<{
         }
     }
 
-    async function logout() {
+    async function cancelPurchase() {
         try {
             setBusy(true);
-            const res = (await browser.runtime.sendMessage({ type: 'managedLogout' })) as {
+            const res = (await browser.runtime.sendMessage({ type: 'cancelPurchase' })) as {
                 ok: boolean;
                 settings?: AppSettings;
             };
             if (res.settings) onChanged(res.settings);
-            onInfo('Вышел из аккаунта');
+            onInfo('Заказ отменён');
         } catch (e) {
             onError((e as Error).message);
         } finally {
             setBusy(false);
         }
+    }
+
+    function reopenPayment(url: string) {
+        if ((chrome as any)?.tabs?.create) (chrome as any).tabs.create({ url });
+        else window.open(url, '_blank');
     }
 
     async function refresh() {
@@ -1053,150 +1033,165 @@ const ManagedScreen: React.FC<{
         }
     }
 
-    function buy() {
-        if ((chrome as any)?.tabs?.create) {
-            (chrome as any).tabs.create({ url: BUY_URL });
-        } else {
-            window.open(BUY_URL, '_blank');
+    async function logoutPro() {
+        try {
+            setBusy(true);
+            const res = (await browser.runtime.sendMessage({ type: 'managedLogout' })) as {
+                ok: boolean;
+                settings?: AppSettings;
+            };
+            if (res.settings) onChanged(res.settings);
+            onInfo('Подписка отвязана');
+        } catch (e) {
+            onError((e as Error).message);
+        } finally {
+            setBusy(false);
         }
     }
 
-    if (!account) {
+    // ----- 1) активная подписка ----------------------------------
+    if (subscribed) {
         return (
             <div style={S.formCard}>
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '10px',
-                    }}
-                >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <IconStar size={16} color={tokens.color.gold} />
                     <strong style={{ fontSize: '13px' }}>PLGames Pro</strong>
                 </div>
-                <div
-                    style={{
-                        fontSize: '12px',
-                        color: tokens.color.textMuted,
-                        marginBottom: '12px',
-                        lineHeight: 1.4,
-                    }}
-                >
-                    Готовый профиль с нашего сервера, без настройки. Войди в аккаунт или оформи
-                    подписку.
+                <div style={S.accountCard}>
+                    <div style={{ ...S.accountRow, marginBottom: '4px' }}>
+                        <span style={S.accountKey}>Тариф</span>
+                        <strong>{account!.tier}</strong>
+                    </div>
+                    <div style={S.accountRow}>
+                        <span style={S.accountKey}>Подписка</span>
+                        <strong style={{ color: '#065f46' }}>
+                            активна до{' '}
+                            {new Date(account!.subscribedUntil).toLocaleDateString()}
+                        </strong>
+                    </div>
                 </div>
-
-                <label style={S.label}>Email</label>
-                <input
-                    style={S.input}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    autoFocus
-                    autoComplete="email"
-                />
-                <label style={S.label}>Пароль</label>
-                <input
-                    style={S.input}
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                />
-                <button style={S.primaryWide} onClick={login} disabled={busy}>
-                    Войти
+                <div style={{ fontSize: '11.5px', color: tokens.color.textMuted, marginBottom: '10px' }}>
+                    Профиль PLGames Pro добавлен в список (чип «PRO»). Включи его на главном экране.
+                </div>
+                <button style={S.primaryWide} onClick={refresh} disabled={busy}>
+                    Обновить
                 </button>
-
-                <div style={S.sep}>
-                    <span style={S.sepLine} />
-                    или
-                    <span style={S.sepLine} />
-                </div>
-
-                <button
-                    style={{
-                        ...S.primaryWide,
-                        background: 'linear-gradient(135deg,#f59e0b,#ea580c)',
-                    }}
-                    onClick={buy}
-                    disabled={busy}
-                >
-                    Оформить подписку
+                <button style={{ ...S.ghostWide, marginTop: '8px' }} onClick={logoutPro} disabled={busy}>
+                    Отвязать подписку
                 </button>
             </div>
         );
     }
 
+    // ----- 2) pending — ждём оплату ------------------------------
+    if (pending) {
+        const minLeft = Math.max(0, Math.ceil((pending.expiresAt - Date.now()) / 60000));
+        return (
+            <div>
+                <div style={S.pendingCard}>
+                    <div style={S.pendingHead}>
+                        <Spinner size={16} />
+                        <span style={S.pendingTitle}>Ожидаем оплату</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#78350f', marginBottom: '8px' }}>
+                        Тариф: <b>{pending.tierLabel}</b> · {pending.amountRub} ₽
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#92400e', marginBottom: '6px' }}>
+                        Сумма уже подставлена. В комментарии должно быть:
+                    </div>
+                    <div style={S.pendingMono}>{pending.comment}</div>
+                    <div
+                        style={{
+                            fontSize: '10.5px',
+                            color: '#92400e',
+                            marginTop: '10px',
+                        }}
+                    >
+                        Ничего делать не нужно — как только платёж пройдёт, профиль появится автоматически.
+                        <br />
+                        Действителен ещё ~{minLeft} мин.
+                    </div>
+                </div>
+                <button
+                    style={S.primaryWide}
+                    onClick={() => reopenPayment(pending.paymentUrl)}
+                    disabled={busy}
+                >
+                    Открыть оплату ещё раз
+                </button>
+                <button style={{ ...S.ghostWide, marginTop: '8px' }} onClick={cancelPurchase} disabled={busy}>
+                    Отменить
+                </button>
+            </div>
+        );
+    }
+
+    // ----- 3) выбор тарифа --------------------------------------
     return (
         <div style={S.formCard}>
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '10px',
-                }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <IconStar size={16} color={tokens.color.gold} />
                 <strong style={{ fontSize: '13px' }}>PLGames Pro</strong>
             </div>
-
-            <div style={S.accountCard}>
-                <div style={{ ...S.accountRow, marginBottom: '4px' }}>
-                    <span style={S.accountKey}>Аккаунт</span>
-                    <strong>{account.email}</strong>
-                </div>
-                <div style={S.accountRow}>
-                    <span style={S.accountKey}>Подписка</span>
-                    {subscribed ? (
-                        <strong style={{ color: '#065f46' }}>
-                            активна до{' '}
-                            {new Date(account.subscribedUntil!).toLocaleDateString()}
-                        </strong>
-                    ) : (
-                        <strong style={{ color: '#92400e' }}>не активна</strong>
-                    )}
-                </div>
+            <div
+                style={{
+                    fontSize: '12px',
+                    color: tokens.color.textMuted,
+                    marginBottom: '12px',
+                    lineHeight: 1.45,
+                }}
+            >
+                Готовый профиль с нашего сервера. Выбери срок — оплата через DonatePay в один клик.
+                Профиль активируется автоматически после оплаты.
             </div>
 
-            {subscribed ? (
-                <>
+            {tiers === null && (
+                <div style={{ textAlign: 'center', padding: '12px', color: tokens.color.textMuted }}>
+                    <Spinner size={18} />
+                    <div style={{ fontSize: '11px', marginTop: '4px' }}>Загружаем тарифы…</div>
+                </div>
+            )}
+
+            {tiers?.map((t, i) => {
+                const popular = i === Math.floor(tiers.length / 2);
+                const active = pickedTier === t.key;
+                return (
                     <div
-                        style={{
-                            fontSize: '11.5px',
-                            color: tokens.color.textMuted,
-                            marginBottom: '10px',
-                            lineHeight: 1.4,
-                        }}
+                        key={t.key}
+                        style={S.tierCard(active, popular)}
+                        onClick={() => setPickedTier(t.key)}
                     >
-                        Профиль PLGames Pro добавлен в список (помечен «PRO»). Включи его на главном
-                        экране.
+                        {popular && <span style={S.tierBadge}>POPULAR</span>}
+                        <div style={{ flex: 1 }}>
+                            <div style={S.tierTitle}>{t.label}</div>
+                            <div style={S.tierSub}>
+                                ≈ {(t.amountRub / t.durationDays).toFixed(1)} ₽ / день
+                            </div>
+                        </div>
+                        <div style={S.tierPrice}>{t.amountRub} ₽</div>
                     </div>
-                    <button style={S.primaryWide} onClick={refresh} disabled={busy}>
-                        Обновить профиль
-                    </button>
-                </>
-            ) : (
+                );
+            })}
+
+            {tiers && tiers.length > 0 && (
                 <button
                     style={{
                         ...S.primaryWide,
-                        background: 'linear-gradient(135deg,#f59e0b,#ea580c)',
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+                        marginTop: '6px',
                     }}
-                    onClick={buy}
-                    disabled={busy}
+                    onClick={() => pickedTier && void buy(pickedTier)}
+                    disabled={busy || !pickedTier}
                 >
-                    Оформить подписку
+                    Перейти к оплате
                 </button>
             )}
 
-            <button
-                style={{ ...S.ghostWide, marginTop: '8px' }}
-                onClick={logout}
-                disabled={busy}
-            >
-                Выйти из аккаунта
-            </button>
+            {tiers && tiers.length === 0 && (
+                <div style={{ ...S.toast('err'), marginTop: '8px' }}>
+                    Тарифов нет. Проверь, что бэкенд PLGames Connect доступен.
+                </div>
+            )}
         </div>
     );
 };

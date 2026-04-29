@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PLGames Connect",
   "short_name": "PLGames Connect",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Network profile manager for PLGames players. Manage HTTPS / SOCKS proxy profiles in one click.",
   "author": "PLGames",
   "permissions": [
@@ -10,7 +10,8 @@
     "proxy",
     "webRequest",
     "webRequestAuthProvider",
-    "tabs"
+    "tabs",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

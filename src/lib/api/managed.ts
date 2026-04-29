@@ -1,150 +1,200 @@
 /**
- * Клиент нашего бэкенда (managed VPN).
+ * Клиент бэкенда PLGames Connect.
+ * Контракт описан в backend/src/routes/*.js. CORS открыт для расширений.
  *
- * Сейчас это ЗАГЛУШКА с детерминированными моками — расширение полностью
- * собирается и работает без реального API. Чтобы подключить настоящий
- * бэкенд, замените:
- *   1) BACKEND_URL — реальный URL API
- *   2) BUY_URL     — публичная страница покупки подписки
- *   3) Реализацию методов login / fetchAccount / fetchProvisionedProfile
- *      на fetch к BACKEND_URL с указанными ниже схемами запросов/ответов.
- *
- * Контракт ответов сервера:
- *
- *   POST /api/auth/login          { email, password }   -> { token, account }
- *   POST /api/auth/logout         (Bearer)              -> 200
- *   GET  /api/account             (Bearer)              -> { account }
- *   GET  /api/profile             (Bearer)              -> { profile }
- *
- *   account =
- *     { email: string; subscribedUntil?: number /* unix ms *​/ }
- *   profile =
- *     { scheme, host, port, username?, password?, name? }
+ * Чтобы поменять адрес API — собери расширение с переменной окружения
+ * PLGAMES_API_URL=https://api.your-domain.example  npm run build
+ * (см. webpack.config.js)
  */
 
-import { ManagedAccount, ProxyProfile } from '../../common/types';
+import { ManagedAccount, PendingOrder, ProxyProfile, ProxyScheme } from '../../common/types';
 import { buildProfile, ParsedProxy } from '../../common/parse';
 
-/** Реальный URL — заменить при деплое. */
-export const BACKEND_URL = 'https://api.example.com';
-/** Страница покупки/тарифов — открывается в новой вкладке. */
-export const BUY_URL = 'https://example.com/pricing';
+declare const PLGAMES_API_URL: string | undefined;
+declare const process: { env: { PLGAMES_API_URL?: string } } | undefined;
 
-const MOCK = true; // флипнуть в false когда будет бэкенд
-
-interface LoginResult {
-    account: ManagedAccount;
+function resolveApiUrl(): string {
+    try {
+        if (typeof PLGAMES_API_URL !== 'undefined' && PLGAMES_API_URL) {
+            return PLGAMES_API_URL;
+        }
+    } catch {
+        // не определён — fallback ниже
+    }
+    return 'https://api.plgames-connect.example';
 }
 
-export class ManagedApiError extends Error {}
+export const API_URL = resolveApiUrl();
 
-export async function login(email: string, password: string): Promise<LoginResult> {
-    if (!email || !password) {
-        throw new ManagedApiError('Введи email и пароль');
+export class ManagedApiError extends Error {
+    constructor(
+        message: string,
+        public statusCode: number = 0,
+    ) {
+        super(message);
     }
-    if (MOCK) {
-        // Демо-аккаунт: любой email/пароль примет, подписка на 30 дней
-        return {
-            account: {
-                email,
-                token: 'mock_token_' + Math.random().toString(36).slice(2),
-                subscribedUntil: Date.now() + 30 * 24 * 60 * 60 * 1000,
-                lastSyncedAt: Date.now(),
-            },
-        };
-    }
-    const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new ManagedApiError(`Не удалось войти (${res.status})`);
-    const data = await res.json();
-    return {
-        account: {
-            email: data.account.email,
-            token: data.token,
-            subscribedUntil: data.account.subscribedUntil,
-            lastSyncedAt: Date.now(),
+}
+
+interface RawTier {
+    key: string;
+    label: string;
+    amountRub: number;
+    durationDays: number;
+}
+export interface Tier extends RawTier {}
+
+interface RawOrder {
+    id: string;
+    tier: string;
+    status: 'pending' | 'paid' | 'expired' | 'cancelled';
+    amountRub: number;
+    durationDays: number;
+    createdAt: number;
+    expiresAt: number;
+    token?: string;
+    subscribedUntil?: number;
+}
+
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        ...init,
+        headers: {
+            'content-type': 'application/json',
+            ...(init?.headers || {}),
         },
+    });
+    let data: any = null;
+    try {
+        data = await res.json();
+    } catch {
+        /* ignore */
+    }
+    if (!res.ok) {
+        const msg = data?.error || `Сервер вернул ${res.status}`;
+        throw new ManagedApiError(msg, res.status);
+    }
+    return data as T;
+}
+
+/** Список тарифов для UI попапа. */
+export async function fetchTiers(): Promise<Tier[]> {
+    const data = await api<{ tiers: RawTier[] }>(`/api/tiers`);
+    return data.tiers;
+}
+
+/** Создать pending-заказ. Возвращает данные для polling и paymentUrl для DonatePay. */
+export async function createOrder(tierKey: string): Promise<{
+    pending: PendingOrder;
+    paymentUrl: string;
+}> {
+    const data = await api<{
+        order: RawOrder;
+        paymentUrl: string;
+        comment: string;
+        tierLabel: string;
+    }>(`/api/orders`, {
+        method: 'POST',
+        body: JSON.stringify({ tier: tierKey }),
+    });
+    return {
+        pending: {
+            id: data.order.id,
+            tier: data.order.tier,
+            tierLabel: data.tierLabel,
+            amountRub: data.order.amountRub,
+            paymentUrl: data.paymentUrl,
+            comment: data.comment,
+            createdAt: data.order.createdAt,
+            expiresAt: data.order.expiresAt,
+        },
+        paymentUrl: data.paymentUrl,
     };
 }
 
-export async function logout(account: ManagedAccount): Promise<void> {
-    if (MOCK) return;
-    try {
-        await fetch(`${BACKEND_URL}/api/auth/logout`, {
-            method: 'POST',
-            headers: { authorization: `Bearer ${account.token}` },
-        });
-    } catch {
-        // ignore — локально всё равно очистим
-    }
+export interface OrderStatusResult {
+    status: 'pending' | 'paid' | 'expired' | 'cancelled' | 'unknown';
+    account?: ManagedAccount;
+    profile?: ProxyProfile;
 }
 
-export async function refreshAccount(account: ManagedAccount): Promise<ManagedAccount> {
-    if (MOCK) {
-        return { ...account, lastSyncedAt: Date.now() };
+/** Опросить статус заказа. Если paid — сразу возвращаем account+profile. */
+export async function pollOrder(orderId: string): Promise<OrderStatusResult> {
+    const data = await api<{ order: RawOrder }>(`/api/orders/${encodeURIComponent(orderId)}`);
+    const o = data.order;
+    if (o.status !== 'paid') return { status: o.status };
+
+    if (!o.token || !o.subscribedUntil) {
+        return { status: 'unknown' };
     }
-    const res = await fetch(`${BACKEND_URL}/api/account`, {
+
+    const account: ManagedAccount = {
+        token: o.token,
+        subscribedUntil: o.subscribedUntil,
+        durationDays: o.durationDays,
+        tier: o.tier,
+        lastSyncedAt: Date.now(),
+    };
+
+    const profile = await fetchProfile(account);
+    return { status: 'paid', account, profile };
+}
+
+/** Получить прокси-креды по уже выданному токену. */
+export async function fetchProfile(account: ManagedAccount): Promise<ProxyProfile> {
+    const data = await api<{
+        profile: {
+            scheme: ProxyScheme;
+            host: string;
+            port: number;
+            username?: string;
+            password?: string;
+            name?: string;
+        };
+    }>(`/api/profile`, {
         headers: { authorization: `Bearer ${account.token}` },
     });
-    if (!res.ok) throw new ManagedApiError(`Сессия истекла (${res.status})`);
-    const data = await res.json();
+    const parsed: ParsedProxy = {
+        scheme: data.profile.scheme,
+        host: data.profile.host,
+        port: data.profile.port,
+        username: data.profile.username,
+        password: data.profile.password,
+        name: data.profile.name,
+    };
+    return buildProfile(parsed, 'managed', parsed.name || 'PLGames Pro');
+}
+
+/** Обновить состояние подписки (например, после открытия попапа после долгого простоя). */
+export async function refreshAccount(account: ManagedAccount): Promise<ManagedAccount> {
+    const data = await api<{
+        account: { subscribedUntil: number; durationDays: number; tier: string };
+    }>(`/api/account`, {
+        headers: { authorization: `Bearer ${account.token}` },
+    });
     return {
         ...account,
-        email: data.account.email,
         subscribedUntil: data.account.subscribedUntil,
+        durationDays: data.account.durationDays,
+        tier: data.account.tier,
         lastSyncedAt: Date.now(),
     };
 }
 
-/**
- * Запрашивает у бэкенда provisioned-профиль. Возвращает готовый ProxyProfile
- * (с source='managed'), но с собственным id, чтобы локально дедуплицировать
- * по host:port не по id.
- */
-export async function fetchProvisionedProfile(account: ManagedAccount): Promise<ProxyProfile> {
-    if (!account.subscribedUntil || account.subscribedUntil < Date.now()) {
-        throw new ManagedApiError('Подписка не активна');
-    }
-
-    let parsed: ParsedProxy;
-    if (MOCK) {
-        // Демо-профиль — он не подключится к реальному серверу, но UI и логика
-        // активации проверяются полностью.
-        parsed = {
-            scheme: 'https',
-            host: 'demo-proxy.example.com',
-            port: 443,
-            username: 'demo_' + account.email.split('@')[0],
-            password: 'demo_password',
-            name: 'Наш сервер (демо)',
-        };
-    } else {
-        const res = await fetch(`${BACKEND_URL}/api/profile`, {
+export async function logout(account: ManagedAccount): Promise<void> {
+    try {
+        await api(`/api/auth/logout`, {
+            method: 'POST',
             headers: { authorization: `Bearer ${account.token}` },
         });
-        if (!res.ok) throw new ManagedApiError(`Не удалось получить профиль (${res.status})`);
-        const data = await res.json();
-        parsed = {
-            scheme: data.profile.scheme,
-            host: data.profile.host,
-            port: data.profile.port,
-            username: data.profile.username,
-            password: data.profile.password,
-            name: data.profile.name,
-        };
+    } catch {
+        /* всё равно удаляем локально */
     }
-
-    return buildProfile(parsed, 'managed', parsed.name || 'Наш сервер');
 }
 
-export function openBuyPage(): void {
-    if (typeof chrome !== 'undefined' && (chrome as any).tabs && (chrome as any).tabs.create) {
-        (chrome as any).tabs.create({ url: BUY_URL });
+export function openPaymentPage(url: string): void {
+    if (typeof chrome !== 'undefined' && (chrome as any).tabs?.create) {
+        (chrome as any).tabs.create({ url });
     } else {
-        // popup-context fallback
-        window.open(BUY_URL, '_blank');
+        window.open(url, '_blank');
     }
 }

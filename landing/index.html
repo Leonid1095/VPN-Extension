@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>PLGames Connect — оплата прошла</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dark: #312e81;
+            --emerald: #10b981;
+            --gold: #f59e0b;
+            --slate-900: #0f172a;
+            --slate-500: #64748b;
+            --slate-200: #e2e8f0;
+            --slate-50: #f8fafc;
+        }
+        html, body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+            color: var(--slate-900);
+            background: linear-gradient(180deg, #f5f6fb 0%, #ffffff 60%);
+            min-height: 100vh;
+        }
+        .wrap {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .brand .logo {
+            width: 56px; height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(180deg,#6366f1,#4338ca);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 16px rgba(67,56,202,.3);
+        }
+        .brand .name { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+        .brand .sub { font-size: 12px; color: var(--slate-500); margin-top: 2px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            padding: 28px 28px 24px;
+            box-shadow: 0 10px 30px rgba(15,23,42,.06);
+        }
+        .check {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(16,185,129,.12);
+            color: var(--emerald);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px;
+        }
+        h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -.01em; }
+        .lede { color: var(--slate-500); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
+
+        .order {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+        .order .label { color: var(--slate-500); font-family: -apple-system, "Inter", sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+
+        ol { padding-left: 0; counter-reset: step; list-style: none; margin: 0; }
+        ol li {
+            counter-increment: step;
+            position: relative;
+            padding: 10px 0 10px 38px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: var(--slate-900);
+        }
+        ol li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0; top: 9px;
+            width: 24px; height: 24px;
+            background: var(--indigo);
+            color: #fff;
+            font-weight: 700;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .footer { margin-top: 28px; text-align: center; font-size: 11px; color: var(--slate-500); }
+        .footer a { color: var(--indigo); text-decoration: none; }
+
+        @media (prefers-color-scheme: dark) {
+            html, body { background: #0b0b14; color: #f1f5f9; }
+            .card { background: #15172a; border-color: #2a2c4a; box-shadow: none; }
+            .order { background: #1e2038; border-color: #2a2c4a; }
+            .lede, .order .label, .footer { color: #94a3b8; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="brand">
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 128 128">
+                <path d="M38.4 23 L38.4 105 M38.4 25.6 a30 30 0 0 1 30 30 a30 30 0 0 1 -30 30"
+                      stroke="#fff" stroke-width="20" stroke-linecap="round" fill="none"/>
+            </svg>
+        </div>
+        <div>
+            <div class="name">PLGames Connect</div>
+            <div class="sub">Network Profile Manager</div>
+        </div>
+    </header>
+
+    <main class="card">
+        <div class="check" aria-hidden>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12 L10 17 L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1>Спасибо за оплату</h1>
+        <p class="lede">
+            Платёж принят к обработке. Подписка PLGames Pro активируется автоматически —
+            ничего вводить не нужно.
+        </p>
+
+        <div class="order">
+            <div class="label">Заказ</div>
+            <span id="order">—</span>
+        </div>
+
+        <ol>
+            <li>Закрой эту вкладку и вернись в попап расширения.</li>
+            <li>Подожди ~10–30 секунд — расширение само поймает оплату.</li>
+            <li>Профиль <b>PLGames Pro</b> появится в списке. Жми «Вкл».</li>
+        </ol>
+    </main>
+
+    <div class="footer">
+        Если профиль не появился через 5 минут —
+        <a id="support" href="mailto:support@plgames.example">напиши в поддержку</a>
+        и приложи номер заказа выше.
+    </div>
+</div>
+<script>
+    (function () {
+        var p = new URLSearchParams(location.search);
+        var order = p.get('order') || '—';
+        document.getElementById('order').textContent = 'PLGC-' + order;
+        document.title = 'PLGC-' + order + ' — спасибо за оплату';
+    })();
+</script>
+</body>
+</html>

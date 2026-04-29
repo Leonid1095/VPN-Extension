@@ -6,21 +6,21 @@ import {
     upsertProfile,
     removeProfile,
     setAccount,
+    setPendingOrder,
+    upsertManagedProfile,
 } from '../common/storage';
 import { applyProxy, getProxyStatus } from '../lib/proxy/connector';
 import {
-    fetchProvisionedProfile,
-    login as apiLogin,
+    createOrder,
+    fetchTiers,
     logout as apiLogout,
-    ManagedApiError,
+    pollOrder,
     refreshAccount,
 } from '../lib/api/managed';
 
 declare const chrome: any;
 
-// ----- brand icon rendering --------------------------------------------------
-// Эта функция рисует "P"-монограмму на indigo-градиентном квадрате — точно ту
-// же геометрию, что и tools/build-icons.js, но в OffscreenCanvas, на лету.
+// ----- icon rendering --------------------------------------------------------
 
 interface IconColors {
     bgTop: string;
@@ -28,7 +28,6 @@ interface IconColors {
     glyph: string;
     accent: string | null;
 }
-
 const ICON_ACTIVE: IconColors = {
     bgTop: '#6366f1',
     bgBot: '#4338ca',
@@ -41,77 +40,6 @@ const ICON_IDLE: IconColors = {
     glyph: '#ffffff',
     accent: null,
 };
-
-function drawIcon(size: number, colors: IconColors): ImageData {
-    const canvas = new OffscreenCanvas(size, size);
-    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
-    if (!ctx) {
-        // Fallback solid colour
-        const buf = new Uint8ClampedArray(size * size * 4);
-        for (let i = 0; i < size * size; i++) {
-            const o = i * 4;
-            buf[o] = 99;
-            buf[o + 1] = 102;
-            buf[o + 2] = 241;
-            buf[o + 3] = 255;
-        }
-        return new ImageData(buf, size, size);
-    }
-
-    ctx.clearRect(0, 0, size, size);
-
-    // 1. скруглённый квадрат — фон
-    const r = size * 0.22;
-    const grad = ctx.createLinearGradient(0, 0, 0, size);
-    grad.addColorStop(0, colors.bgTop);
-    grad.addColorStop(1, colors.bgBot);
-    ctx.fillStyle = grad;
-    roundedRectPath(ctx, 0, 0, size, size, r);
-    ctx.fill();
-
-    // 2. "P"-монограмма
-    const T = size * 0.16;
-    const stem_x = size * 0.3;
-    const stem_top = size * 0.2;
-    const stem_bot = size * 0.82;
-    const bowl_cx = stem_x + T / 2;
-    const bowl_cy = size * 0.36;
-    const outer_R = size * 0.24;
-
-    ctx.strokeStyle = colors.glyph;
-    ctx.fillStyle = colors.glyph;
-    ctx.lineWidth = T;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // вертикальный stem
-    ctx.beginPath();
-    ctx.moveTo(stem_x + T / 2, stem_top + T / 2);
-    ctx.lineTo(stem_x + T / 2, stem_bot - T / 2);
-    ctx.stroke();
-
-    // bowl как полудуга (от верха stem'а вокруг и обратно к stem'у)
-    ctx.beginPath();
-    ctx.arc(bowl_cx, bowl_cy, outer_R - T / 2, -Math.PI / 2, Math.PI / 2);
-    ctx.stroke();
-
-    // 3. accent dot (online)
-    if (colors.accent) {
-        const ax = size * 0.78;
-        const ay = size * 0.78;
-        const aR = size * 0.16;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(ax, ay, aR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = colors.accent;
-        ctx.beginPath();
-        ctx.arc(ax, ay, aR - size * 0.04, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    return ctx.getImageData(0, 0, size, size);
-}
 
 function roundedRectPath(
     ctx: OffscreenCanvasRenderingContext2D,
@@ -134,38 +62,82 @@ function roundedRectPath(
     ctx.closePath();
 }
 
+function drawIcon(size: number, colors: IconColors): ImageData {
+    const canvas = new OffscreenCanvas(size, size);
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
+    if (!ctx) {
+        const buf = new Uint8ClampedArray(size * size * 4);
+        for (let i = 0; i < size * size; i++) {
+            const o = i * 4;
+            buf[o] = 99;
+            buf[o + 1] = 102;
+            buf[o + 2] = 241;
+            buf[o + 3] = 255;
+        }
+        return new ImageData(buf, size, size);
+    }
+    ctx.clearRect(0, 0, size, size);
+    const r = size * 0.22;
+    const grad = ctx.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, colors.bgTop);
+    grad.addColorStop(1, colors.bgBot);
+    ctx.fillStyle = grad;
+    roundedRectPath(ctx, 0, 0, size, size, r);
+    ctx.fill();
+
+    const T = size * 0.16;
+    const stem_x = size * 0.3;
+    const stem_top = size * 0.2;
+    const stem_bot = size * 0.82;
+    const bowl_cx = stem_x + T / 2;
+    const bowl_cy = size * 0.36;
+    const outer_R = size * 0.24;
+    ctx.strokeStyle = colors.glyph;
+    ctx.fillStyle = colors.glyph;
+    ctx.lineWidth = T;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(stem_x + T / 2, stem_top + T / 2);
+    ctx.lineTo(stem_x + T / 2, stem_bot - T / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(bowl_cx, bowl_cy, outer_R - T / 2, -Math.PI / 2, Math.PI / 2);
+    ctx.stroke();
+
+    if (colors.accent) {
+        const ax = size * 0.78;
+        const ay = size * 0.78;
+        const aR = size * 0.16;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(ax, ay, aR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(ax, ay, aR - size * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    return ctx.getImageData(0, 0, size, size);
+}
+
 async function refreshIcon(settings: AppSettings): Promise<void> {
     const enabled = settings.enabled && settings.activeProfileId !== null;
     const colors = enabled ? ICON_ACTIVE : ICON_IDLE;
     const sizes = [16, 32, 48, 128];
     const imageData: Record<number, ImageData> = {};
-    for (const s of sizes) {
-        imageData[s] = drawIcon(s, colors);
-    }
+    for (const s of sizes) imageData[s] = drawIcon(s, colors);
     try {
         await browser.action.setIcon({ imageData });
-    } catch {
-        /* ignore */
-    }
+    } catch {}
     try {
-        await browser.action.setBadgeText({ text: '' }); // бренд-точка уже на иконке
-    } catch {
-        /* ignore */
-    }
-    try {
-        const profile = enabled
-            ? settings.profiles.find((p) => p.id === settings.activeProfileId)
-            : undefined;
-        const title = profile
-            ? `PLGames Connect — ${profile.name} (${profile.scheme}://${profile.host}:${profile.port})`
-            : 'PLGames Connect — выключено';
-        await browser.action.setTitle({ title });
-    } catch {
-        /* ignore */
-    }
+        await browser.action.setTitle({
+            title: enabled ? 'PLGames Connect — подключено' : 'PLGames Connect',
+        });
+    } catch {}
 }
 
-// ----- proxy state sync ------------------------------------------------------
+// ----- helpers ---------------------------------------------------------------
 
 async function syncFromStorage(): Promise<AppSettings> {
     const settings = await getSettings();
@@ -193,10 +165,7 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
             }
             getSettings()
                 .then((settings) => {
-                    if (!settings.enabled) {
-                        callback({});
-                        return;
-                    }
+                    if (!settings.enabled) return callback({});
                     const profile = findActive(settings);
                     if (profile && profile.username && profile.password) {
                         callback({
@@ -205,9 +174,7 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
                                 password: profile.password,
                             },
                         });
-                    } else {
-                        callback({});
-                    }
+                    } else callback({});
                 })
                 .catch(() => callback({}));
         },
@@ -216,27 +183,80 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
     );
 }
 
+// ----- pending-order watcher (alarms; переживает рестарт SW) -----------------
+
+const ORDER_ALARM = 'plgc-poll-order';
+
+async function schedulePoll(periodMin = 0.5): Promise<void> {
+    try {
+        await browser.alarms.create(ORDER_ALARM, {
+            delayInMinutes: periodMin,
+            periodInMinutes: periodMin,
+        });
+    } catch {}
+}
+
+async function clearPoll(): Promise<void> {
+    try {
+        await browser.alarms.clear(ORDER_ALARM);
+    } catch {}
+}
+
+async function tickPoll(): Promise<void> {
+    const settings = await getSettings();
+    const pending = settings.pendingOrder;
+    if (!pending) return clearPoll();
+
+    if (Date.now() > pending.expiresAt) {
+        await setPendingOrder(null);
+        await clearPoll();
+        return;
+    }
+
+    try {
+        const res = await pollOrder(pending.id);
+        if (res.status === 'paid' && res.account && res.profile) {
+            await setAccount(res.account);
+            await upsertManagedProfile(res.profile);
+            await setPendingOrder(null);
+            await clearPoll();
+            const next = await getSettings();
+            await refreshIcon(next);
+        } else if (res.status === 'expired' || res.status === 'cancelled') {
+            await setPendingOrder(null);
+            await clearPoll();
+        }
+    } catch {
+        // сетевые ошибки — будем пробовать снова на следующем тике
+    }
+}
+
+if (typeof browser.alarms !== 'undefined') {
+    browser.alarms.onAlarm.addListener(async (alarm) => {
+        if (alarm.name === ORDER_ALARM) await tickPoll();
+    });
+}
+
 // ----- message handlers ------------------------------------------------------
 
 browser.runtime.onMessage.addListener(async (message: any) => {
     switch (message?.type) {
-        case 'getSettings': {
+        case 'getSettings':
             return await getSettings();
-        }
-        case 'upsertProfile': {
-            const settings = await upsertProfile(message.profile as ProxyProfile);
-            return settings;
-        }
+
+        case 'upsertProfile':
+            return await upsertProfile(message.profile as ProxyProfile);
+
         case 'removeProfile': {
             const settings = await removeProfile(message.id as string);
             await applyProxy(settings);
             await refreshIcon(settings);
             return settings;
         }
+
         case 'activate': {
             const settings = await getSettings();
-            const exists = settings.profiles.some((p) => p.id === message.id);
-            if (!exists) {
+            if (!settings.profiles.some((p) => p.id === message.id)) {
                 throw new Error('Профиль не найден');
             }
             settings.activeProfileId = message.id as string;
@@ -246,6 +266,7 @@ browser.runtime.onMessage.addListener(async (message: any) => {
             await refreshIcon(settings);
             return settings;
         }
+
         case 'deactivate': {
             const settings = await getSettings();
             settings.enabled = false;
@@ -254,76 +275,73 @@ browser.runtime.onMessage.addListener(async (message: any) => {
             await refreshIcon(settings);
             return settings;
         }
-        case 'updateBypassList': {
-            const settings = await getSettings();
-            settings.bypassList = Array.isArray(message.bypassList)
-                ? message.bypassList
-                : settings.bypassList;
-            await saveSettings(settings);
-            await applyProxy(settings);
-            return settings;
-        }
-        case 'getStatus': {
-            const status = await getProxyStatus();
-            return { status };
-        }
 
-        // ----- managed (PLGames Pro) ----------------------------------------
+        case 'getStatus':
+            return { status: await getProxyStatus() };
 
-        case 'managedLogin': {
+        // ----- managed (PLGames Pro) ---------------------------------------
+
+        case 'fetchTiers': {
             try {
-                const { account } = await apiLogin(message.email, message.password);
-                let settings = await setAccount(account);
-                try {
-                    const profile = await fetchProvisionedProfile(account);
-                    settings.profiles = settings.profiles.filter((p) => p.source !== 'managed');
-                    settings.profiles.push({ ...profile, syncedAt: Date.now() });
-                    await saveSettings(settings);
-                } catch {
-                    /* без подписки или временная ошибка — ок */
-                }
-                return { ok: true, settings };
+                const tiers = await fetchTiers();
+                return { ok: true, tiers };
             } catch (e) {
                 return { ok: false, error: (e as Error).message };
             }
         }
+
+        case 'createPurchase': {
+            try {
+                const { pending, paymentUrl } = await createOrder(message.tier as string);
+                await setPendingOrder(pending);
+                await schedulePoll(0.5);
+                // открываем DonatePay в новой вкладке
+                if ((chrome as any)?.tabs?.create) {
+                    (chrome as any).tabs.create({ url: paymentUrl });
+                }
+                const settings = await getSettings();
+                return { ok: true, settings, paymentUrl };
+            } catch (e) {
+                return { ok: false, error: (e as Error).message };
+            }
+        }
+
+        case 'cancelPurchase': {
+            await setPendingOrder(null);
+            await clearPoll();
+            const settings = await getSettings();
+            return { ok: true, settings };
+        }
+
+        case 'pollNow': {
+            await tickPoll();
+            const settings = await getSettings();
+            return { ok: true, settings };
+        }
+
+        case 'managedRefresh': {
+            const settings = await getSettings();
+            if (!settings.account) return { ok: false, error: 'no account' };
+            try {
+                const acc = await refreshAccount(settings.account);
+                const next = await setAccount(acc);
+                return { ok: true, settings: next };
+            } catch (e) {
+                return { ok: false, error: (e as Error).message };
+            }
+        }
+
         case 'managedLogout': {
             const settings = await getSettings();
             if (settings.account) {
                 try {
                     await apiLogout(settings.account);
-                } catch {
-                    /* ignore */
-                }
+                } catch {}
             }
             const next = await setAccount(null);
             await applyProxy(next);
             await refreshIcon(next);
             return { ok: true, settings: next };
-        }
-        case 'managedRefresh': {
-            const settings = await getSettings();
-            if (!settings.account) return { ok: false, error: 'Не авторизован' };
-            try {
-                const account = await refreshAccount(settings.account);
-                let next = await setAccount(account);
-                try {
-                    const profile = await fetchProvisionedProfile(account);
-                    next.profiles = next.profiles.filter((p) => p.source !== 'managed');
-                    next.profiles.push({ ...profile, syncedAt: Date.now() });
-                    await saveSettings(next);
-                } catch (e) {
-                    if (e instanceof ManagedApiError) {
-                        next.profiles = next.profiles.filter((p) => p.source !== 'managed');
-                        await saveSettings(next);
-                    } else {
-                        throw e;
-                    }
-                }
-                return { ok: true, settings: next };
-            } catch (e) {
-                return { ok: false, error: (e as Error).message };
-            }
         }
 
         default:
@@ -336,7 +354,11 @@ browser.runtime.onInstalled.addListener(() => {
 });
 
 browser.runtime.onStartup.addListener(() => {
-    void syncFromStorage();
+    void syncFromStorage().then(async (s) => {
+        if (s.pendingOrder) await schedulePoll(0.5);
+    });
 });
 
-void syncFromStorage();
+void syncFromStorage().then(async (s) => {
+    if (s.pendingOrder) await schedulePoll(0.5);
+});

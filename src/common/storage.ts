@@ -1,5 +1,11 @@
 import { browser } from 'webextension-polyfill-ts';
-import { AppSettings, DEFAULT_SETTINGS, ManagedAccount, ProxyProfile } from './types';
+import {
+    AppSettings,
+    DEFAULT_SETTINGS,
+    ManagedAccount,
+    PendingOrder,
+    ProxyProfile,
+} from './types';
 
 const KEY = 'appSettings';
 
@@ -15,6 +21,7 @@ export async function getSettings(): Promise<AppSettings> {
                 ? stored.bypassList
                 : [...DEFAULT_SETTINGS.bypassList],
         account: stored.account ?? null,
+        pendingOrder: stored.pendingOrder ?? null,
     };
 }
 
@@ -49,7 +56,7 @@ export async function setAccount(account: ManagedAccount | null): Promise<AppSet
     const settings = await getSettings();
     settings.account = account;
     if (!account) {
-        // logout: убираем managed-профили
+        // logout: чистим managed-профиль
         settings.profiles = settings.profiles.filter((p) => p.source !== 'managed');
         if (
             settings.activeProfileId &&
@@ -59,6 +66,21 @@ export async function setAccount(account: ManagedAccount | null): Promise<AppSet
             settings.enabled = false;
         }
     }
+    await saveSettings(settings);
+    return settings;
+}
+
+export async function setPendingOrder(order: PendingOrder | null): Promise<AppSettings> {
+    const settings = await getSettings();
+    settings.pendingOrder = order;
+    await saveSettings(settings);
+    return settings;
+}
+
+export async function upsertManagedProfile(profile: ProxyProfile): Promise<AppSettings> {
+    const settings = await getSettings();
+    settings.profiles = settings.profiles.filter((p) => p.source !== 'managed');
+    settings.profiles.push(profile);
     await saveSettings(settings);
     return settings;
 }

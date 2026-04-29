@@ -5,6 +5,34 @@ All notable changes to **PLGames Connect** will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] — 2026-04-29
+
+### Added — Pro flow становится автономным
+- **Backend** (`backend/`): Node 20 + Fastify + better-sqlite3 + Docker. 4 эндпоинта
+  (`/api/tiers`, `/api/orders`, `/api/orders/:id`, `/api/account`, `/api/profile`)
+  плюс webhook `/api/donatepay/webhook`.
+- **DonatePay интеграция**: builder ссылок на оплату с автозаполненным comment
+  (`PLGC-<orderId>`), нормализатор payload-формата, проверка HMAC-подписи webhook.
+- **Прокси-пул**: `data/proxy-pool.json` — конфиг серверов; `lib/proxy-pool.js` —
+  least-loaded выбор + генерация уникальных basic_auth кредов на заказ.
+- **Расширение**:
+  - типы `PendingOrder` + `ManagedAccount` (теперь без email — авторизация по
+    Bearer-токену, выданному после фиксации оплаты).
+  - API-клиент: `fetchTiers`, `createOrder`, `pollOrder`, `fetchProfile`, `refreshAccount`.
+  - background SW: `chrome.alarms`-watcher, который polling-ом проверяет статус
+    pending-заказа, переживает рестарты SW. Permission `alarms` добавлен в манифест.
+  - popup: ManagedScreen перерисован под три состояния — выбор тарифа, ожидание
+    оплаты с обратным отсчётом и комментарием, активная подписка.
+  - webpack `DefinePlugin` пробрасывает `PLGAMES_API_URL` из env при сборке.
+- **Landing** (`landing/`): статическая страница `/thanks` для DonatePay
+  `success_url` — поясняет, что профиль активируется автоматически.
+- **Документация**: `backend/README.md` с инструкциями по DonatePay и nginx,
+  `landing/README.md` с вариантами хостинга.
+
+### Changed
+- Manifest version 2.2.0 → 2.3.0; добавлен permission `alarms`.
+- Удалены email/password поля из managed-flow — пользователь больше ничего не вводит.
+
 ## [2.2.0] — 2026-04-28
 
 ### Branding

@@ -3,7 +3,7 @@ export type ProxyScheme = 'https' | 'http' | 'socks5' | 'socks4';
 /**
  * Источник профиля:
  *  - 'byo'      — пользователь добавил свой сервер (ссылка/файл/руками)
- *  - 'managed'  — выдан нашим бэкендом по активной подписке
+ *  - 'managed'  — выдан нашим бэкендом по оплаченному заказу
  */
 export type ProxySource = 'byo' | 'managed';
 
@@ -21,13 +21,30 @@ export interface ProxyProfile {
     syncedAt?: number;
 }
 
+/**
+ * Pending-заказ: создан в расширении, но ещё не оплачен.
+ * Попап polling-ом проверяет статус, фоновый SW дублирует через chrome.alarms.
+ */
+export interface PendingOrder {
+    id: string;
+    tier: string;            // '30d' | '90d' | '365d'
+    tierLabel: string;
+    amountRub: number;
+    paymentUrl: string;      // ссылка на DonatePay
+    comment: string;         // что юзер увидит в комментарии при оплате
+    createdAt: number;
+    expiresAt: number;
+}
+
+/**
+ * Состояние активной подписки (после успешной оплаты).
+ */
 export interface ManagedAccount {
-    email: string;
-    /** Bearer-токен от нашего бэкенда. Хранится только локально. */
+    /** Bearer-токен, выданный бэкендом. Хранится только локально. */
     token: string;
-    /** Дата окончания подписки (unix ms). undefined => подписки нет. */
-    subscribedUntil?: number;
-    /** Когда последний раз ходили на бэкенд. */
+    subscribedUntil: number;     // unix ms
+    durationDays: number;
+    tier: string;
     lastSyncedAt: number;
 }
 
@@ -37,6 +54,7 @@ export interface AppSettings {
     profiles: ProxyProfile[];
     bypassList: string[];
     account: ManagedAccount | null;
+    pendingOrder: PendingOrder | null;
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected';
@@ -49,4 +67,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     profiles: [],
     bypassList: [...DEFAULT_BYPASS_LIST],
     account: null,
+    pendingOrder: null,
 };

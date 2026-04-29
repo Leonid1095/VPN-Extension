@@ -1,0 +1,10 @@
+[
+    {
+        "id": "eu-1",
+        "scheme": "https",
+        "host": "eu-1.proxy.example.com",
+        "port": 443,
+        "name": "PLGames Pro · EU-1",
+        "capacity": 200
+    }
+]

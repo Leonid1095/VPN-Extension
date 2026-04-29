@@ -1,0 +1,19 @@
+{
+  "name": "plgames-connect-backend",
+  "version": "1.0.0",
+  "description": "PLGames Connect backend — orders, DonatePay webhook, proxy provisioning",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/rate-limit": "^10.0.0"
+  }
+}
