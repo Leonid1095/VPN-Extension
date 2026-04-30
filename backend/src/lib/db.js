@@ -16,11 +16,12 @@ CREATE TABLE IF NOT EXISTS orders (
     tier          TEXT NOT NULL,               -- '30d' / '90d' / '365d'
     amount_rub    INTEGER NOT NULL,
     duration_days INTEGER NOT NULL,
-    status        TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'paid' | 'expired' | 'cancelled'
+    status        TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'paid' | 'expired' | 'cancelled' | 'revoked'
     token         TEXT UNIQUE,                 -- Bearer-токен, генерится после paid
     proxy_id      TEXT,                        -- какой сервер из пула выдан
-    proxy_user    TEXT,                        -- сгенерированный логин для basic_auth
-    proxy_pass    TEXT,                        -- сгенерированный пароль
+    proxy_user    TEXT,                        -- текущий логин для basic_auth
+    proxy_pass    TEXT,                        -- текущий пароль
+    creds_rotated_at INTEGER,                  -- unix ms последней ротации креды
     subscribed_until INTEGER,                  -- unix ms окончания подписки
     payment_id    TEXT,                        -- DonatePay payment id из webhook
     created_at    INTEGER NOT NULL,
@@ -31,7 +32,15 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_token  ON orders(token);
 CREATE INDEX IF NOT EXISTS idx_orders_expires ON orders(expires_at);
+CREATE INDEX IF NOT EXISTS idx_orders_proxy   ON orders(proxy_id, status);
+
+-- Миграция: добавляем creds_rotated_at если БД старая
 `);
+try {
+    db.prepare('SELECT creds_rotated_at FROM orders LIMIT 1').get();
+} catch {
+    db.exec('ALTER TABLE orders ADD COLUMN creds_rotated_at INTEGER');
+}
 
 export function ensureClean() {
     // помечаем просроченные pending как expired (ничего страшного если быстрый юзер ещё успел)

@@ -641,7 +641,7 @@ const App: React.FC = () => {
                 />
             )}
 
-            <div style={S.footer}>PLGames Connect · v2.3.0 · трафик только в браузере</div>
+            <div style={S.footer}>PLGames Connect · v2.4.0 · трафик только в браузере</div>
         </div>
     );
 };

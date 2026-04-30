@@ -5,6 +5,32 @@ All notable changes to **PLGames Connect** will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] — 2026-04-29
+
+### Security & ops
+- **Credential rotation.** Backend rotates `basic_auth` username/password every
+  24h on `GET /api/profile`; extension force-rotates via
+  `POST /api/profile/rotate` from a `chrome.alarms` job every 12h. Stolen creds
+  expire in at most one day. Active proxy is automatically re-applied with new
+  credentials.
+- **Internal API for proxy-side agents:** `GET /api/internal/server/:id/users`
+  and `POST /api/internal/admin/revoke`, both gated by `X-Internal-Token`.
+- **Proxy-side sync agent** (`agent/`): pure Bash + curl + jq, deployed via
+  systemd timer, polls the internal API every 30s and rewrites the
+  `basic_auth` block in the NaiveProxy Caddyfile between
+  `# >>> PLGAMES_USERS_BEGIN` / `# <<< PLGAMES_USERS_END` markers, then issues
+  `caddy reload`.
+- **`SECURITY.md`** added: threat model, what is vs. isn't protected, ops
+  checklist before going production.
+
+### Pricing
+- Tiers updated to 159 / 299 / 699 ₽ (was 199 / 499 / 1499).
+
+### Migration notes
+- Backend SQLite gains `creds_rotated_at` column (auto-migrated on startup).
+- Backend `.env` adds optional `INTERNAL_API_TOKEN`. If empty — internal API is
+  disabled (development).
+
 ## [2.3.0] — 2026-04-29
 
 ### Added — Pro flow становится автономным

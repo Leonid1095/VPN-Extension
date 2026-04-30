@@ -164,6 +164,36 @@ export async function fetchProfile(account: ManagedAccount): Promise<ProxyProfil
     return buildProfile(parsed, 'managed', parsed.name || 'PLGames Pro');
 }
 
+/**
+ * Принудительная ротация кредов: бэкенд выдаёт новый username/password,
+ * старые перестают работать после следующего sync на прокси-сервере.
+ * Зовётся фоновым SW раз в 12 часов.
+ */
+export async function rotateProfile(account: ManagedAccount): Promise<ProxyProfile> {
+    const data = await api<{
+        profile: {
+            scheme: ProxyScheme;
+            host: string;
+            port: number;
+            username?: string;
+            password?: string;
+            name?: string;
+        };
+    }>(`/api/profile/rotate`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${account.token}` },
+    });
+    const parsed: ParsedProxy = {
+        scheme: data.profile.scheme,
+        host: data.profile.host,
+        port: data.profile.port,
+        username: data.profile.username,
+        password: data.profile.password,
+        name: data.profile.name,
+    };
+    return buildProfile(parsed, 'managed', parsed.name || 'PLGames Pro');
+}
+
 /** Обновить состояние подписки (например, после открытия попапа после долгого простоя). */
 export async function refreshAccount(account: ManagedAccount): Promise<ManagedAccount> {
     const data = await api<{

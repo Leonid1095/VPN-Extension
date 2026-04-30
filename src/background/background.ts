@@ -16,6 +16,7 @@ import {
     logout as apiLogout,
     pollOrder,
     refreshAccount,
+    rotateProfile,
 } from '../lib/api/managed';
 
 declare const chrome: any;
@@ -183,9 +184,11 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
     );
 }
 
-// ----- pending-order watcher (alarms; переживает рестарт SW) -----------------
+// ----- alarms ----------------------------------------------------------------
 
 const ORDER_ALARM = 'plgc-poll-order';
+const ROTATE_ALARM = 'plgc-rotate-creds';
+const ROTATE_PERIOD_MIN = 12 * 60; // 12 часов
 
 async function schedulePoll(periodMin = 0.5): Promise<void> {
     try {
@@ -231,9 +234,48 @@ async function tickPoll(): Promise<void> {
     }
 }
 
+async function scheduleRotation(): Promise<void> {
+    try {
+        await browser.alarms.create(ROTATE_ALARM, {
+            delayInMinutes: ROTATE_PERIOD_MIN,
+            periodInMinutes: ROTATE_PERIOD_MIN,
+        });
+    } catch {}
+}
+
+async function clearRotation(): Promise<void> {
+    try {
+        await browser.alarms.clear(ROTATE_ALARM);
+    } catch {}
+}
+
+async function tickRotate(): Promise<void> {
+    const settings = await getSettings();
+    const acc = settings.account;
+    if (!acc || acc.subscribedUntil < Date.now()) {
+        await clearRotation();
+        return;
+    }
+    try {
+        const profile = await rotateProfile(acc);
+        await upsertManagedProfile(profile);
+        // если активный профиль был managed — заново применим прокси с новыми кредами
+        const next = await getSettings();
+        const active = next.activeProfileId
+            ? next.profiles.find((p) => p.id === next.activeProfileId)
+            : null;
+        if (next.enabled && active && active.source === 'managed') {
+            await applyProxy(next);
+        }
+    } catch {
+        // оставим текущие — попробуем ещё раз через 12 часов
+    }
+}
+
 if (typeof browser.alarms !== 'undefined') {
     browser.alarms.onAlarm.addListener(async (alarm) => {
         if (alarm.name === ORDER_ALARM) await tickPoll();
+        else if (alarm.name === ROTATE_ALARM) await tickRotate();
     });
 }
 
@@ -295,7 +337,7 @@ browser.runtime.onMessage.addListener(async (message: any) => {
                 const { pending, paymentUrl } = await createOrder(message.tier as string);
                 await setPendingOrder(pending);
                 await schedulePoll(0.5);
-                // открываем DonatePay в новой вкладке
+                await scheduleRotation();
                 if ((chrome as any)?.tabs?.create) {
                     (chrome as any).tabs.create({ url: paymentUrl });
                 }
@@ -341,7 +383,14 @@ browser.runtime.onMessage.addListener(async (message: any) => {
             const next = await setAccount(null);
             await applyProxy(next);
             await refreshIcon(next);
+            await clearRotation();
             return { ok: true, settings: next };
+        }
+
+        case 'rotateNow': {
+            await tickRotate();
+            const settings = await getSettings();
+            return { ok: true, settings };
         }
 
         default:
@@ -356,9 +405,11 @@ browser.runtime.onInstalled.addListener(() => {
 browser.runtime.onStartup.addListener(() => {
     void syncFromStorage().then(async (s) => {
         if (s.pendingOrder) await schedulePoll(0.5);
+        if (s.account && s.account.subscribedUntil > Date.now()) await scheduleRotation();
     });
 });
 
 void syncFromStorage().then(async (s) => {
     if (s.pendingOrder) await schedulePoll(0.5);
+    if (s.account && s.account.subscribedUntil > Date.now()) await scheduleRotation();
 });

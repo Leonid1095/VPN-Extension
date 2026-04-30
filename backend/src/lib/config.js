@@ -32,7 +32,16 @@ export const config = {
 
 /** Тарифы. Цены в рублях. comment-префикс — PLGC. */
 export const TIERS = {
-    '30d':  { duration_days: 30,  amount_rub: 199,  label: '30 дней' },
-    '90d':  { duration_days: 90,  amount_rub: 499,  label: '90 дней' },
-    '365d': { duration_days: 365, amount_rub: 1499, label: '365 дней' },
+    '30d':  { duration_days: 30,  amount_rub: 159, label: '30 дней' },
+    '90d':  { duration_days: 90,  amount_rub: 299, label: '90 дней' },
+    '365d': { duration_days: 365, amount_rub: 699, label: '365 дней' },
 };
+
+/** Сколько живут текущие basic_auth-креды до ротации. */
+export const CREDENTIALS_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Внутренний токен для агента-синхронизатора на прокси-серверах.
+ * Если пустой — internal-эндпоинт отключён (для dev). В продакшене обязателен.
+ */
+export const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN || '';

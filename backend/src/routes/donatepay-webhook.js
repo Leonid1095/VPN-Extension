@@ -97,6 +97,7 @@ export default async function (fastify) {
                    SET status='paid',
                        token=?,
                        proxy_id=?, proxy_user=?, proxy_pass=?,
+                       creds_rotated_at=?,
                        subscribed_until=?,
                        payment_id=?,
                        paid_at=?
@@ -106,6 +107,7 @@ export default async function (fastify) {
                 prov.server.id,
                 prov.username,
                 prov.password,
+                now,
                 subscribedUntil,
                 evt.paymentId,
                 now,

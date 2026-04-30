@@ -7,6 +7,7 @@ import './lib/db.js'; // инициализация
 import ordersRoute from './routes/orders.js';
 import profileRoute from './routes/profile.js';
 import donatepayWebhook from './routes/donatepay-webhook.js';
+import internalRoute from './routes/internal.js';
 
 const app = Fastify({
     logger: {
@@ -37,6 +38,7 @@ app.get('/healthz', async () => ({ ok: true, ts: Date.now() }));
 await app.register(ordersRoute);
 await app.register(profileRoute);
 await app.register(donatepayWebhook);
+await app.register(internalRoute);
 
 try {
     await app.listen({ port: config.port, host: config.host });
