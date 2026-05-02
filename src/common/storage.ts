@@ -11,6 +11,14 @@ import {
 const KEY = 'appSettings';
 const INSTALLATION_KEY = 'installationId';
 
+function mergeBypassList(stored: string[] | undefined): string[] {
+    const base = stored && stored.length ? [...stored] : [];
+    for (const required of DEFAULT_SETTINGS.bypassList) {
+        if (!base.includes(required)) base.push(required);
+    }
+    return base.length ? base : [...DEFAULT_SETTINGS.bypassList];
+}
+
 /**
  * Стабильный per-installation идентификатор для привязки подписки к одному
  * устройству. Генерируется один раз при первом запросе, persist в local storage.
@@ -37,10 +45,10 @@ export async function getSettings(): Promise<AppSettings> {
         enabled: stored.enabled ?? DEFAULT_SETTINGS.enabled,
         activeProfileId: stored.activeProfileId ?? DEFAULT_SETTINGS.activeProfileId,
         profiles: stored.profiles ?? [],
-        bypassList:
-            stored.bypassList && stored.bypassList.length
-                ? stored.bypassList
-                : [...DEFAULT_SETTINGS.bypassList],
+        // Миграция: если у юзера старый bypass-список без наших доменов —
+        // добавляем недостающие, чтобы /api запросы расширения не уходили в
+        // прокси-петлю (см. DEFAULT_BYPASS_LIST).
+        bypassList: mergeBypassList(stored.bypassList),
         account: stored.account ?? null,
         pendingOrder: stored.pendingOrder ?? null,
         update: stored.update ?? null,

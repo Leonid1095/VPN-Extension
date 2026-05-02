@@ -74,7 +74,21 @@ export interface AppSettings {
 
 export type ConnectionStatus = 'connected' | 'disconnected';
 
-export const DEFAULT_BYPASS_LIST: string[] = ['localhost', '127.0.0.1', '<local>'];
+/**
+ * Хосты, которые расширение НЕ проксирует — обычные local-isolation
+ * + наши собственные домены, чтобы запросы /api/profile, /api/account и т.п.
+ * шли напрямую с устройства юзера, а не через прокси-туннель к нашему же
+ * серверу (избегаем hairpin: через прокси-сервер обратно к API того же
+ * VPS — это даёт 5-секундные стопы из-за NAT-loopback в SNI-стримере).
+ */
+export const DEFAULT_BYPASS_LIST: string[] = [
+    'localhost',
+    '127.0.0.1',
+    '<local>',
+    'api.plgames-wow.online',
+    'buy.plgames-wow.online',
+    'plgames-wow.online',
+];
 
 export const DEFAULT_SETTINGS: AppSettings = {
     enabled: false,
