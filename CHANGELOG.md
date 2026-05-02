@@ -5,6 +5,40 @@ All notable changes to **PLGames Connect** will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] — 2026-05-02
+
+### Fixed
+- **on/off toggle bug.** После «Откл» профиль оставался в активной карточке (с
+  кнопкой «Откл», уже бесполезной), а из общего списка исчезал — пользователь не
+  мог нажать «Вкл» обратно. Теперь после деактивации активная карточка
+  скрывается, а профиль возвращается в общий список.
+
+### Added — Update notifier
+- Расширение поставленное через «Load unpacked» не получает автообновлений от
+  Chrome. Теперь раз в сутки фоновый SW сам проверяет GitHub Releases API:
+  - сравнивает `tag_name` последнего релиза с `manifest.version`,
+  - при наличии новой версии ставит badge `NEW` (золотой) и рисует карточку
+    в попапе со ссылкой «Скачать» и «Позже»,
+  - запоминает версию, для которой пользователь нажал «Позже» — повторно не
+    показывает до следующего релиза.
+- Новый эндпоинт background-message: `checkUpdateNow`, `dismissUpdate`.
+- `src/lib/updater.ts` — pure GitHub API client с semver-сравнением.
+
+## [2.4.1] — 2026-05-02
+
+### Fixed
+- `donatepay-webhook` preParsing-хук теперь возвращает `Readable.from(buf)` —
+  fastify не зависает после чтения raw-body.
+- `package-lock.json`: убрана зависимость `pino-pretty` (мешала
+  production-build в Docker).
+
+### Added
+- `DONATEPAY_PAYMENT_PAGE_URL` env-переменная — позволяет указывать актуальный
+  base URL платёжной страницы DonatePay (`https://new.donatepay.ru/@<username>`).
+  Fallback на старый qiwi-формат если не задана.
+- В попапе подсказка про точную сумму платежа (если ввести другую — backend
+  отклонит как underpaid и подписка не активируется).
+
 ## [2.4.0] — 2026-04-29
 
 ### Security & ops

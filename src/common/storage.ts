@@ -5,6 +5,7 @@ import {
     ManagedAccount,
     PendingOrder,
     ProxyProfile,
+    UpdateInfo,
 } from './types';
 
 const KEY = 'appSettings';
@@ -22,7 +23,24 @@ export async function getSettings(): Promise<AppSettings> {
                 : [...DEFAULT_SETTINGS.bypassList],
         account: stored.account ?? null,
         pendingOrder: stored.pendingOrder ?? null,
+        update: stored.update ?? null,
     };
+}
+
+export async function setUpdateInfo(update: UpdateInfo | null): Promise<AppSettings> {
+    const settings = await getSettings();
+    settings.update = update;
+    await saveSettings(settings);
+    return settings;
+}
+
+export async function dismissUpdate(version: string): Promise<AppSettings> {
+    const settings = await getSettings();
+    if (settings.update) {
+        settings.update = { ...settings.update, dismissedFor: version };
+        await saveSettings(settings);
+    }
+    return settings;
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {

@@ -8,7 +8,10 @@ import {
     setAccount,
     setPendingOrder,
     upsertManagedProfile,
+    setUpdateInfo,
+    dismissUpdate,
 } from '../common/storage';
+import { checkForUpdate } from '../lib/updater';
 import { applyProxy, getProxyStatus } from '../lib/proxy/connector';
 import {
     createOrder,
@@ -136,6 +139,22 @@ async function refreshIcon(settings: AppSettings): Promise<void> {
             title: enabled ? 'PLGames Connect — подключено' : 'PLGames Connect',
         });
     } catch {}
+
+    // Бэйдж: показываем "NEW" если есть актуальное обновление и юзер его не скрыл.
+    // Подключённое состояние имеет приоритет — иначе бэйдж "NEW" перекрыл бы статус.
+    try {
+        const update = settings.update;
+        const hasUnseenUpdate =
+            update &&
+            update.latestVersion &&
+            update.dismissedFor !== update.latestVersion;
+        if (!enabled && hasUnseenUpdate) {
+            await browser.action.setBadgeText({ text: 'NEW' });
+            await browser.action.setBadgeBackgroundColor({ color: '#f59e0b' });
+        } else {
+            await browser.action.setBadgeText({ text: '' });
+        }
+    } catch {}
 }
 
 // ----- helpers ---------------------------------------------------------------
@@ -189,6 +208,8 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
 const ORDER_ALARM = 'plgc-poll-order';
 const ROTATE_ALARM = 'plgc-rotate-creds';
 const ROTATE_PERIOD_MIN = 12 * 60; // 12 часов
+const UPDATE_ALARM = 'plgc-check-update';
+const UPDATE_PERIOD_MIN = 24 * 60; // раз в сутки
 
 async function schedulePoll(periodMin = 0.5): Promise<void> {
     try {
@@ -272,10 +293,47 @@ async function tickRotate(): Promise<void> {
     }
 }
 
+// ----- update notifier (раз в сутки проверяем GitHub Releases) ---------------
+
+async function scheduleUpdateCheck(): Promise<void> {
+    try {
+        await browser.alarms.create(UPDATE_ALARM, {
+            delayInMinutes: 1,                    // первая проверка через минуту после старта
+            periodInMinutes: UPDATE_PERIOD_MIN,
+        });
+    } catch {}
+}
+
+async function tickUpdateCheck(): Promise<void> {
+    try {
+        const info = await checkForUpdate();
+        if (info) {
+            const next = await setUpdateInfo(info);
+            await refreshIcon(next);
+        } else {
+            // нет апдейта — чистим прошлую запись если была
+            const settings = await getSettings();
+            if (settings.update && settings.update.latestVersion === info) {
+                // unreachable но оставлено для ясности
+            } else if (settings.update) {
+                const cur = (browser.runtime.getManifest() as any).version;
+                if (settings.update.latestVersion === cur) {
+                    await setUpdateInfo(null);
+                    const refreshed = await getSettings();
+                    await refreshIcon(refreshed);
+                }
+            }
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 if (typeof browser.alarms !== 'undefined') {
     browser.alarms.onAlarm.addListener(async (alarm) => {
         if (alarm.name === ORDER_ALARM) await tickPoll();
         else if (alarm.name === ROTATE_ALARM) await tickRotate();
+        else if (alarm.name === UPDATE_ALARM) await tickUpdateCheck();
     });
 }
 
@@ -393,6 +451,23 @@ browser.runtime.onMessage.addListener(async (message: any) => {
             return { ok: true, settings };
         }
 
+        case 'checkUpdateNow': {
+            await tickUpdateCheck();
+            const settings = await getSettings();
+            return { ok: true, settings };
+        }
+
+        case 'dismissUpdate': {
+            const settings = await getSettings();
+            const v = settings.update?.latestVersion;
+            if (v) {
+                const next = await dismissUpdate(v);
+                await refreshIcon(next);
+                return { ok: true, settings: next };
+            }
+            return { ok: true, settings };
+        }
+
         default:
             return undefined;
     }
@@ -400,16 +475,21 @@ browser.runtime.onMessage.addListener(async (message: any) => {
 
 browser.runtime.onInstalled.addListener(() => {
     void syncFromStorage();
+    void scheduleUpdateCheck();
+    // первая проверка сразу после установки/обновления
+    void tickUpdateCheck();
 });
 
 browser.runtime.onStartup.addListener(() => {
     void syncFromStorage().then(async (s) => {
         if (s.pendingOrder) await schedulePoll(0.5);
         if (s.account && s.account.subscribedUntil > Date.now()) await scheduleRotation();
+        await scheduleUpdateCheck();
     });
 });
 
 void syncFromStorage().then(async (s) => {
     if (s.pendingOrder) await schedulePoll(0.5);
     if (s.account && s.account.subscribedUntil > Date.now()) await scheduleRotation();
+    await scheduleUpdateCheck();
 });
