@@ -517,8 +517,10 @@ const App: React.FC = () => {
         }
     }
 
+    // активным показываем профиль только когда он реально подключён
+    // (enabled=true). После «Откл» возвращаем его в общий список с кнопкой «Вкл».
     const active: ProxyProfile | null = useMemo(() => {
-        if (!settings || !settings.activeProfileId) return null;
+        if (!settings || !settings.enabled || !settings.activeProfileId) return null;
         return settings.profiles.find((p) => p.id === settings.activeProfileId) ?? null;
     }, [settings]);
 
@@ -608,6 +610,8 @@ const App: React.FC = () => {
             {error && <div style={S.toast('err')}>{error}</div>}
             {info && <div style={S.toast('ok')}>{info}</div>}
 
+            <UpdateBanner settings={settings} onChanged={(s) => setSettings(s)} />
+
             {screen === 'home' && (
                 <HomeScreen
                     settings={settings}
@@ -641,7 +645,103 @@ const App: React.FC = () => {
                 />
             )}
 
-            <div style={S.footer}>PLGames Connect · v2.4.0 · трафик только в браузере</div>
+            <div style={S.footer}>PLGames Connect · v2.4.2 · трафик только в браузере</div>
+        </div>
+    );
+};
+
+// ============================================================================
+// UPDATE BANNER
+// ============================================================================
+
+const updateBannerStyles = {
+    box: {
+        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+        border: `1px solid ${tokens.color.gold}`,
+        borderRadius: tokens.radius.md,
+        padding: '10px 12px',
+        marginBottom: '10px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px',
+    } as React.CSSProperties,
+    title: { fontSize: '12.5px', fontWeight: 700, color: '#78350f' } as React.CSSProperties,
+    sub: {
+        fontSize: '11px',
+        color: '#92400e',
+        marginTop: '3px',
+        lineHeight: 1.4,
+    } as React.CSSProperties,
+    actionRow: { display: 'flex', gap: '6px', marginTop: '8px' } as React.CSSProperties,
+    download: {
+        background: tokens.color.gold,
+        color: '#fff',
+        border: 'none',
+        borderRadius: '6px',
+        padding: '6px 10px',
+        fontSize: '11px',
+        fontWeight: 600,
+        cursor: 'pointer',
+    } as React.CSSProperties,
+    later: {
+        background: 'transparent',
+        border: 'none',
+        color: '#92400e',
+        fontSize: '11px',
+        fontWeight: 600,
+        cursor: 'pointer',
+        padding: '6px 4px',
+    } as React.CSSProperties,
+};
+
+const UpdateBanner: React.FC<{
+    settings: AppSettings;
+    onChanged: (s: AppSettings) => void;
+}> = ({ settings, onChanged }) => {
+    const u = settings.update;
+    if (!u) return null;
+    if (u.dismissedFor === u.latestVersion) return null;
+
+    function openDownload() {
+        if ((chrome as any)?.tabs?.create) {
+            (chrome as any).tabs.create({ url: u!.downloadUrl });
+        } else {
+            window.open(u!.downloadUrl, '_blank');
+        }
+    }
+
+    async function dismiss() {
+        try {
+            const res = (await browser.runtime.sendMessage({
+                type: 'dismissUpdate',
+            })) as { ok: boolean; settings?: AppSettings };
+            if (res.settings) onChanged(res.settings);
+        } catch {}
+    }
+
+    return (
+        <div style={updateBannerStyles.box}>
+            <div style={{ marginTop: '1px' }}>
+                <IconStar size={14} color={tokens.color.gold} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={updateBannerStyles.title}>
+                    Доступна новая версия v{u.latestVersion}
+                </div>
+                <div style={updateBannerStyles.sub}>
+                    У тебя установлена v{u.currentVersion}. Расширение установлено вне Chrome
+                    Web Store, поэтому обновления приходят вручную: скачай новый zip и
+                    переустанови.
+                </div>
+                <div style={updateBannerStyles.actionRow}>
+                    <button style={updateBannerStyles.download} onClick={openDownload}>
+                        Скачать
+                    </button>
+                    <button style={updateBannerStyles.later} onClick={dismiss}>
+                        Позже
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -662,7 +762,11 @@ const HomeScreen: React.FC<{
 }> = ({ settings, active, busy, onActivate, onDeactivate, onRemove, onAddByo, onManaged }) => {
     const account = settings.account;
     const subscriptionActive = account && account.subscribedUntil > Date.now();
-    const otherProfiles = settings.profiles.filter((p) => p.id !== settings.activeProfileId);
+    // когда подключение активно — исключаем активный профиль из списка (он уже наверху).
+    // когда выключено — показываем все профили (активный тоже), чтобы можно было нажать «Вкл».
+    const otherProfiles = settings.enabled
+        ? settings.profiles.filter((p) => p.id !== settings.activeProfileId)
+        : settings.profiles;
     const hasAny = settings.profiles.length > 0;
 
     return (

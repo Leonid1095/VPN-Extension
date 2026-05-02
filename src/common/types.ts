@@ -48,6 +48,20 @@ export interface ManagedAccount {
     lastSyncedAt: number;
 }
 
+/**
+ * Информация о доступной новой версии расширения.
+ * Заполняется фоновой проверкой GitHub Releases раз в 24 часа.
+ */
+export interface UpdateInfo {
+    latestVersion: string;       // например "2.4.2"
+    currentVersion: string;      // версия из манифеста на момент проверки
+    releaseUrl: string;          // ссылка на страницу релиза
+    downloadUrl: string;         // прямая ссылка на zip
+    notes: string;               // первые ~400 символов release notes
+    checkedAt: number;           // unix ms
+    dismissedFor?: string;       // версия, для которой юзер скрыл уведомление
+}
+
 export interface AppSettings {
     enabled: boolean;
     activeProfileId: string | null;
@@ -55,6 +69,7 @@ export interface AppSettings {
     bypassList: string[];
     account: ManagedAccount | null;
     pendingOrder: PendingOrder | null;
+    update: UpdateInfo | null;
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected';
@@ -68,4 +83,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     bypassList: [...DEFAULT_BYPASS_LIST],
     account: null,
     pendingOrder: null,
+    update: null,
 };

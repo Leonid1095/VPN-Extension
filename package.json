@@ -1,6 +1,6 @@
 {
   "name": "plgames-connect",
-  "version": "2.4.0",
+  "version": "2.4.2",
   "description": "PLGames Connect — network profile manager for browsers (HTTPS/SOCKS proxy client).",
   "main": "src/background/background.ts",
   "scripts": {
