@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>PLGames Connect — установка расширения</title>
+    <meta name="description" content="PLGames Connect — менеджер сетевых профилей для браузера. Скачать и установить.">
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dark: #312e81;
+            --emerald: #10b981;
+            --gold: #f59e0b;
+            --slate-900: #0f172a;
+            --slate-500: #64748b;
+            --slate-200: #e2e8f0;
+            --slate-50: #f8fafc;
+        }
+        html, body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+            color: var(--slate-900);
+            background: linear-gradient(180deg, #f5f6fb 0%, #ffffff 60%);
+            min-height: 100vh;
+        }
+        .wrap { max-width: 620px; margin: 0 auto; padding: 60px 24px 80px; }
+        .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+        .brand .logo {
+            width: 56px; height: 56px; border-radius: 14px;
+            background: linear-gradient(180deg,#6366f1,#4338ca);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 16px rgba(67,56,202,.3);
+        }
+        .brand .name { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+        .brand .sub { font-size: 12px; color: var(--slate-500); margin-top: 2px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--slate-200);
+            border-radius: 18px;
+            padding: 28px 28px 24px;
+            box-shadow: 0 10px 30px rgba(15,23,42,.06);
+        }
+        h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: -.01em; }
+        .lede { color: var(--slate-500); font-size: 14px; line-height: 1.55; margin: 0 0 22px; }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(99,102,241,.3);
+            transition: transform .12s ease, box-shadow .12s ease;
+            cursor: pointer;
+        }
+        .download-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(99,102,241,.4); }
+        .download-btn .ver { font-size: 12px; opacity: .8; font-weight: 500; margin-left: 4px; }
+
+        ol { padding-left: 0; counter-reset: step; list-style: none; margin: 24px 0 0; }
+        ol li {
+            counter-increment: step;
+            position: relative;
+            padding: 10px 0 10px 38px;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: var(--slate-900);
+        }
+        ol li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0; top: 9px;
+            width: 24px; height: 24px;
+            background: var(--indigo);
+            color: #fff;
+            font-weight: 700;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        code {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 6px;
+            padding: 1px 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12.5px;
+        }
+
+        .features { margin: 24px 0 0; padding: 16px 18px; background: var(--slate-50); border-radius: 12px; border: 1px solid var(--slate-200); }
+        .features b { font-size: 13px; }
+        .features ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--slate-500); }
+
+        .promo {
+            margin-top: 18px;
+            padding: 18px 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            transition: transform .12s ease;
+        }
+        .promo:hover { transform: translateY(-1px); }
+        .promo .icon {
+            flex: 0 0 44px;
+            width: 44px; height: 44px; border-radius: 10px;
+            background: rgba(99,102,241,.25);
+            color: #a5b4fc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .promo .body { flex: 1; min-width: 0; }
+        .promo .label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-bottom: 2px; }
+        .promo .name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+        .promo .desc { font-size: 12px; color: #cbd5e1; line-height: 1.45; }
+        .promo .arrow { color: #a5b4fc; flex: 0 0 auto; }
+
+        .footer { margin-top: 28px; text-align: center; font-size: 11px; color: var(--slate-500); }
+        .footer a { color: var(--indigo); text-decoration: none; }
+
+        @media (prefers-color-scheme: dark) {
+            html, body { background: #0b0b14; color: #f1f5f9; }
+            .card { background: #15172a; border-color: #2a2c4a; box-shadow: none; }
+            .lede, .footer, .features ul { color: #94a3b8; }
+            code, .features { background: #1e2038; border-color: #2a2c4a; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="brand">
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 128 128">
+                <path d="M38.4 23 L38.4 105 M38.4 25.6 a30 30 0 0 1 30 30 a30 30 0 0 1 -30 30"
+                      stroke="#fff" stroke-width="20" stroke-linecap="round" fill="none"/>
+            </svg>
+        </div>
+        <div>
+            <div class="name">PLGames Connect</div>
+            <div class="sub">Network Profile Manager</div>
+        </div>
+    </header>
+
+    <main class="card">
+        <h1>Установка расширения</h1>
+        <p class="lede">
+            PLGames Connect — менеджер сетевых профилей для браузера.
+            Получайте готовые профили PLGames Pro в один клик.
+        </p>
+
+        <a class="download-btn" id="download"
+           href="https://github.com/Leonid1095/VPN-Extension/releases/latest/download/plgames-connect.zip">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Скачать расширение
+            <span class="ver" id="ver"></span>
+        </a>
+
+        <ol>
+            <li>Распакуй архив в любую папку.</li>
+            <li>В Chrome / Edge / Brave открой <code>chrome://extensions/</code>.</li>
+            <li>Включи «Режим разработчика» в правом верхнем углу.</li>
+            <li>Нажми «Загрузить распакованное» и выбери папку с расширением.</li>
+            <li>Открой попап и нажми «PLGames Pro» для покупки подписки.</li>
+        </ol>
+
+        <div class="features">
+            <b>Что внутри:</b>
+            <ul>
+                <li>Покупка подписки прямо из попапа через DonatePay</li>
+                <li>Профиль активируется автоматически после оплаты</li>
+                <li>Переключение профилей одним кликом</li>
+            </ul>
+        </div>
+
+        <a class="promo" href="https://plgames-dns.space/" target="_blank" rel="noopener">
+            <div class="icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="body">
+                <div class="label">Ещё от нас</div>
+                <div class="name">PLGames DNS — защищённый DNS</div>
+                <div class="desc">Блокировка рекламы и трекеров на уровне DNS. Шифрование запросов через DoH / DoT. Любое устройство, отклик в миллисекундах.</div>
+            </div>
+            <div class="arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6"/>
+                </svg>
+            </div>
+        </a>
+    </main>
+
+    <div class="footer">
+        Вопросы? <a href="https://marz116.duckdns.org/" target="_blank" rel="noopener">Поддержка</a>
+        · <a href="https://github.com/Leonid1095/VPN-Extension" target="_blank" rel="noopener">GitHub</a>
+    </div>
+</div>
+<script>
+    // показываем версию релиза в кнопке
+    fetch('https://api.github.com/repos/Leonid1095/VPN-Extension/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(rel => {
+            if (rel && rel.tag_name) {
+                document.getElementById('ver').textContent = rel.tag_name;
+            }
+        })
+        .catch(() => {});
+</script>
+</body>
+</html>
