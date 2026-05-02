@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { db } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { provision, getServerById } from '../lib/proxy-pool.js';
@@ -12,21 +13,19 @@ export default async function (fastify) {
     fastify.post(
         config.donatepay.webhookPath,
         {
-            // получаем raw body для проверки подписи
-            preParsing: async (req) => {
-                req.rawBody = await new Promise((res, rej) => {
-                    let buf = '';
-                    req.raw.on('data', (c) => (buf += c));
-                    req.raw.on('end', () => res(buf));
-                    req.raw.on('error', rej);
-                });
-                try {
-                    req.body = JSON.parse(req.rawBody || '{}');
-                } catch {
-                    req.body = {};
-                }
+            // забираем raw body из payload-стрима до парсинга, чтобы
+            // verifyWebhookSignature мог посчитать HMAC по точным байтам.
+            // Возвращаем новый readable stream с теми же данными — иначе
+            // fastify зависает, ожидая body, который мы уже прочитали.
+            preParsing: async (req, _reply, payload) => {
+                const chunks = [];
+                for await (const chunk of payload) chunks.push(chunk);
+                const buf = Buffer.concat(
+                    chunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c))),
+                );
+                req.rawBody = buf.toString('utf8');
+                return Readable.from(buf);
             },
-            config: { rawBody: true },
         },
         async (req, reply) => {
             const sigHeader =

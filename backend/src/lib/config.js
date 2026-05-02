@@ -21,6 +21,8 @@ export const config = {
         webhookSecret: process.env.DONATEPAY_WEBHOOK_SECRET || '',
         webhookPath: process.env.DONATEPAY_WEBHOOK_PATH || '/api/donatepay/webhook',
         username: process.env.DONATEPAY_USERNAME || '',
+        apiBaseUrl: process.env.DONATEPAY_API_BASE_URL || 'https://donatepay.ru/api/v1',
+        paymentPageUrl: process.env.DONATEPAY_PAYMENT_PAGE_URL || '',
     },
 
     successUrl: process.env.SUCCESS_URL || 'https://example.com/thanks',

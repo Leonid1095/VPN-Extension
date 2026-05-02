@@ -13,14 +13,28 @@ import { config } from './config.js';
 export const COMMENT_PREFIX = 'PLGC-';
 
 /**
- * Универсальный билдер ссылки на оплату для DonatePay.
- * Ссылка: https://donate.qiwi.com/payin/<USERNAME>?sum=<rub>&message=<comment>
- * — по-умолчанию у DonatePay/Qiwi совместимый формат с прокидыванием суммы и комментария.
+ * Билдер ссылки на оплату для DonatePay.
+ *
+ * Если в env задан DONATEPAY_PAYMENT_PAGE_URL — используем его как базу
+ * (актуальный формат: https://new.donatepay.ru/@<username>).
+ * Иначе fallback на старый qiwi-совместимый формат.
+ *
+ * Параметры sum/message прокидываются в query — DonatePay подхватывает их
+ * при загрузке страницы оплаты и подставляет в форму.
  */
 export function buildPaymentUrl(orderId, amountRub) {
+    const message = `${COMMENT_PREFIX}${orderId}`;
+    const params = new URLSearchParams({
+        sum: String(amountRub),
+        message,
+    });
+    const base = config.donatepay.paymentPageUrl;
+    if (base) {
+        const sep = base.includes('?') ? '&' : '?';
+        return `${base}${sep}${params.toString()}`;
+    }
     const username = encodeURIComponent(config.donatepay.username || 'unknown');
-    const message = encodeURIComponent(`${COMMENT_PREFIX}${orderId}`);
-    return `https://donate.qiwi.com/payin/${username}?sum=${amountRub}&message=${message}`;
+    return `https://donate.qiwi.com/payin/${username}?${params.toString()}`;
 }
 
 /** Извлекаем orderId из comment. */

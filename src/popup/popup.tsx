@@ -1094,20 +1094,26 @@ const ManagedScreen: React.FC<{
                         <span style={S.pendingTitle}>Ожидаем оплату</span>
                     </div>
                     <div style={{ fontSize: '12px', color: '#78350f', marginBottom: '8px' }}>
-                        Тариф: <b>{pending.tierLabel}</b> · {pending.amountRub} ₽
+                        Тариф: <b>{pending.tierLabel}</b>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#92400e', marginBottom: '6px' }}>
-                        Сумма уже подставлена. В комментарии должно быть:
+                    <div style={{ fontSize: '11px', color: '#92400e', marginBottom: '4px', marginTop: '6px' }}>
+                        На странице DonatePay введи <b>ровно эту сумму</b>:
+                    </div>
+                    <div style={S.pendingMono}>{pending.amountRub} ₽</div>
+                    <div style={{ fontSize: '11px', color: '#92400e', marginBottom: '4px', marginTop: '8px' }}>
+                        Комментарий уже подставлен — не меняй его:
                     </div>
                     <div style={S.pendingMono}>{pending.comment}</div>
                     <div
                         style={{
                             fontSize: '10.5px',
-                            color: '#92400e',
+                            color: '#b91c1c',
                             marginTop: '10px',
+                            lineHeight: 1.45,
                         }}
                     >
-                        Ничего делать не нужно — как только платёж пройдёт, профиль появится автоматически.
+                        ⚠️ Если сумма меньше тарифа или комментарий изменён — подписка не активируется.
+                        После корректной оплаты профиль появится автоматически.
                         <br />
                         Действителен ещё ~{minLeft} мин.
                     </div>
