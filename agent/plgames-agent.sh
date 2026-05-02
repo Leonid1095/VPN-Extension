@@ -54,7 +54,7 @@ if [[ -z "$USERS_BLOCK" ]]; then
     USERS_BLOCK="        basic_auth __plgames_placeholder__ __plgames_placeholder__"
 fi
 
-# 4) ищем блок forward_proxy в Caddyfile и переписываем basic_auth-список
+# 4) ищем блоки forward_proxy в Caddyfile и переписываем basic_auth-список.
 #
 # Ожидаемая структура файла (чувствительна к маркерам):
 #
@@ -65,17 +65,18 @@ fi
 #       # <<< PLGAMES_USERS_END
 #       hide_ip
 #       hide_via
-#       probe_resistance
 #   }
 #
-# Маркеры PLGAMES_USERS_BEGIN/END должны быть прописаны в Caddyfile один раз
-# при изначальной установке (см. agent/README.md).
+# Поддерживаются также маркеры PLGAMES_USERS_BEGIN_STEALTH/END_STEALTH —
+# для отдельного site-block с probe_resistance (см. docs/STEALTH.md).
+# Один прогон агента синхронизирует оба блока, если они есть.
 
 if ! grep -q 'PLGAMES_USERS_BEGIN' "$CADDYFILE"; then
     logger -t "$LOG_TAG" "Caddyfile missing PLGAMES_USERS_BEGIN marker — see agent/README.md"
     exit 1
 fi
 
+# regex без anchors — ловит и BEGIN, и BEGIN_STEALTH (равно для END).
 NEW_CADDYFILE=$(awk -v repl="$USERS_BLOCK" '
     /# >>> PLGAMES_USERS_BEGIN/ { print; print repl; inside=1; next }
     /# <<< PLGAMES_USERS_END/   { inside=0 }
