@@ -9,6 +9,26 @@ import {
 } from './types';
 
 const KEY = 'appSettings';
+const INSTALLATION_KEY = 'installationId';
+
+/**
+ * Стабильный per-installation идентификатор для привязки подписки к одному
+ * устройству. Генерируется один раз при первом запросе, persist в local storage.
+ * Бэкенд при первом /api/profile запоминает его и отклоняет последующие
+ * запросы с другим installationId.
+ */
+export async function getInstallationId(): Promise<string> {
+    const result = await browser.storage.local.get(INSTALLATION_KEY);
+    let id = (result[INSTALLATION_KEY] || '') as string;
+    if (!id || typeof id !== 'string' || id.length < 16) {
+        // 16 байт = 128 бит энтропии, urlsafe base64 ~22 символа
+        const bytes = new Uint8Array(16);
+        (globalThis.crypto || (globalThis as any).msCrypto).getRandomValues(bytes);
+        id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        await browser.storage.local.set({ [INSTALLATION_KEY]: id });
+    }
+    return id;
+}
 
 export async function getSettings(): Promise<AppSettings> {
     const result = await browser.storage.local.get(KEY);

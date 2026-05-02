@@ -33,6 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_token  ON orders(token);
 CREATE INDEX IF NOT EXISTS idx_orders_expires ON orders(expires_at);
 CREATE INDEX IF NOT EXISTS idx_orders_proxy   ON orders(proxy_id, status);
+CREATE INDEX IF NOT EXISTS idx_orders_user    ON orders(proxy_user);
 
 -- Миграция: добавляем creds_rotated_at если БД старая
 `);
@@ -40,6 +41,11 @@ try {
     db.prepare('SELECT creds_rotated_at FROM orders LIMIT 1').get();
 } catch {
     db.exec('ALTER TABLE orders ADD COLUMN creds_rotated_at INTEGER');
+}
+try {
+    db.prepare('SELECT installation_id FROM orders LIMIT 1').get();
+} catch {
+    db.exec('ALTER TABLE orders ADD COLUMN installation_id TEXT');
 }
 
 export function ensureClean() {

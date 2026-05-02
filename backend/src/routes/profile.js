@@ -53,6 +53,34 @@ function rotateCreds(order) {
     return { ...order, proxy_user: username, proxy_pass: password, creds_rotated_at: now };
 }
 
+/**
+ * Привязка подписки к одному устройству (installation-id из расширения).
+ * При первом обращении пишем installation_id в БД, далее любые запросы с
+ * другим installation_id отклоняются. Защищает от шеринга token+ creds
+ * между устройствами.
+ */
+function bindOrCheckInstallation(order, installationId) {
+    if (!installationId || typeof installationId !== 'string' || installationId.length < 8) {
+        return { ok: true, order };
+    }
+    if (!order.installation_id) {
+        db.prepare('UPDATE orders SET installation_id = ? WHERE id = ?').run(
+            installationId,
+            order.id,
+        );
+        return { ok: true, order: { ...order, installation_id: installationId } };
+    }
+    if (order.installation_id !== installationId) {
+        return { ok: false, reason: 'installation mismatch' };
+    }
+    return { ok: true, order };
+}
+
+function readInstallationId(req) {
+    const h = req.headers['x-installation-id'];
+    return typeof h === 'string' ? h : '';
+}
+
 export default async function (fastify) {
     fastify.get('/api/account', async (req, reply) => {
         const order = authOrder(req);
@@ -66,7 +94,9 @@ export default async function (fastify) {
         if (order.subscribed_until < Date.now()) {
             return reply.code(402).send({ error: 'subscription expired' });
         }
-        let current = order;
+        const bound = bindOrCheckInstallation(order, readInstallationId(req));
+        if (!bound.ok) return reply.code(403).send({ error: bound.reason });
+        let current = bound.order;
         // если креды старые (TTL прошёл) — ротируем при каждом обращении
         if (
             !current.creds_rotated_at ||
@@ -79,14 +109,16 @@ export default async function (fastify) {
         return { profile };
     });
 
-    /** Принудительная ротация кредов. Расширение зовёт раз в 12 часов. */
+    /** Принудительная ротация кредов. Расширение зовёт по своему расписанию. */
     fastify.post('/api/profile/rotate', async (req, reply) => {
         const order = authOrder(req);
         if (!order) return reply.code(401).send({ error: 'unauthorized' });
         if (order.subscribed_until < Date.now()) {
             return reply.code(402).send({ error: 'subscription expired' });
         }
-        const updated = rotateCreds(order);
+        const bound = bindOrCheckInstallation(order, readInstallationId(req));
+        if (!bound.ok) return reply.code(403).send({ error: bound.reason });
+        const updated = rotateCreds(bound.order);
         const profile = publicProfile(updated);
         if (!profile) return reply.code(503).send({ error: 'proxy not available' });
         return { profile };

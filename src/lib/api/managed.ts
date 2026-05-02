@@ -9,6 +9,7 @@
 
 import { ManagedAccount, PendingOrder, ProxyProfile, ProxyScheme } from '../../common/types';
 import { buildProfile, ParsedProxy } from '../../common/parse';
+import { getInstallationId } from '../../common/storage';
 
 declare const PLGAMES_API_URL: string | undefined;
 declare const process: { env: { PLGAMES_API_URL?: string } } | undefined;
@@ -141,6 +142,7 @@ export async function pollOrder(orderId: string): Promise<OrderStatusResult> {
 
 /** Получить прокси-креды по уже выданному токену. */
 export async function fetchProfile(account: ManagedAccount): Promise<ProxyProfile> {
+    const installationId = await getInstallationId();
     const data = await api<{
         profile: {
             scheme: ProxyScheme;
@@ -151,7 +153,10 @@ export async function fetchProfile(account: ManagedAccount): Promise<ProxyProfil
             name?: string;
         };
     }>(`/api/profile`, {
-        headers: { authorization: `Bearer ${account.token}` },
+        headers: {
+            authorization: `Bearer ${account.token}`,
+            'x-installation-id': installationId,
+        },
     });
     const parsed: ParsedProxy = {
         scheme: data.profile.scheme,
@@ -170,6 +175,7 @@ export async function fetchProfile(account: ManagedAccount): Promise<ProxyProfil
  * Зовётся фоновым SW раз в 12 часов.
  */
 export async function rotateProfile(account: ManagedAccount): Promise<ProxyProfile> {
+    const installationId = await getInstallationId();
     const data = await api<{
         profile: {
             scheme: ProxyScheme;
@@ -181,7 +187,10 @@ export async function rotateProfile(account: ManagedAccount): Promise<ProxyProfi
         };
     }>(`/api/profile/rotate`, {
         method: 'POST',
-        headers: { authorization: `Bearer ${account.token}` },
+        headers: {
+            authorization: `Bearer ${account.token}`,
+            'x-installation-id': installationId,
+        },
     });
     const parsed: ParsedProxy = {
         scheme: data.profile.scheme,

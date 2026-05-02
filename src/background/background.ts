@@ -207,7 +207,7 @@ if (typeof chrome !== 'undefined' && chrome.webRequest && chrome.webRequest.onAu
 
 const ORDER_ALARM = 'plgc-poll-order';
 const ROTATE_ALARM = 'plgc-rotate-creds';
-const ROTATE_PERIOD_MIN = 12 * 60; // 12 часов
+const ROTATE_PERIOD_MIN = 90; // 1.5 часа — короче чем CREDENTIALS_TTL_MS=2h на бэке
 const UPDATE_ALARM = 'plgc-check-update';
 const UPDATE_PERIOD_MIN = 24 * 60; // раз в сутки
 
