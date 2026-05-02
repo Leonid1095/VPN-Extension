@@ -10,12 +10,14 @@
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4f46e5?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License](https://img.shields.io/github/license/Leonid1095/VPN-Extension?style=flat-square&color=10b981)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/Leonid1095/VPN-Extension?style=flat-square&color=f59e0b)](https://github.com/Leonid1095/VPN-Extension/stargazers)
+[![Sponsor](https://img.shields.io/badge/%E2%9D%A4_%D0%9F%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-DonatePay-ff5e85?style=flat-square)](https://new.donatepay.ru/@lenya)
 
 [Скачать релиз](https://github.com/Leonid1095/VPN-Extension/releases/latest) ·
 [Установка](#установка) ·
 [Архитектура](#архитектура) ·
 [Свой сервер](#свой-сервер) ·
-[FAQ](#faq)
+[FAQ](#faq) ·
+[Поддержать](#поддержать-проект)
 
 </div>
 
@@ -263,6 +265,24 @@ docs/
 - [ ] Локализация EN / RU / KZ
 
 ---
+
+## Поддержать проект
+
+Если PLGames Connect полезен — спасибо, что используешь. Расширение и серверная
+часть бесплатны и open-source. Поддержать развитие можно донатом на DonatePay:
+
+<p align="center">
+    <a href="https://new.donatepay.ru/@lenya">
+        <img src="https://img.shields.io/badge/%E2%9D%A4_%D0%9F%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-DonatePay-ff5e85?style=for-the-badge" alt="Поддержать на DonatePay" />
+    </a>
+</p>
+
+Эти деньги идут на оплату VPS под прокси-серверы (PLGames Pro), на TLS-сертификаты
+и на время на развитие проекта. Если пользуешься Pro-подпиской — этого достаточно,
+никакого дополнительного доната не нужно. Кнопка для тех, кто пользуется бесплатным
+BYO-режимом и хочет помочь.
+
+Кнопка «Sponsor» рядом с именем репозитория ведёт сюда же.
 
 ## Лицензия
 

@@ -1,0 +1,9 @@
+# Кнопка "Sponsor" на странице репозитория.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# GitHub Sponsors напрямую не оформлен — для русскоязычных авторов это
+# обычно сложно. Используем custom URL c DonatePay (проверенно работает).
+# Добавляй сюда новые URL по мере появления (Boosty, Telegram-донаты и т.п.).
+
+custom:
+  - https://new.donatepay.ru/@lenya
