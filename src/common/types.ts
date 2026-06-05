@@ -81,13 +81,33 @@ export type ConnectionStatus = 'connected' | 'disconnected';
  * серверу (избегаем hairpin: через прокси-сервер обратно к API того же
  * VPS — это даёт 5-секундные стопы из-за NAT-loopback в SNI-стримере).
  */
+
+// Адрес API подставляется на сборке (webpack DefinePlugin, из PLGAMES_API_URL).
+declare const PLGAMES_API_URL: string | undefined;
+
+/**
+ * Хосты бэкенда выводятся из сконфигурированного API-URL, а не хардкодятся:
+ * сам хост, апекс-домен и все его поддомены. Так в исходниках нет привязки к
+ * конкретному продакшен-домену — он задаётся только при сборке.
+ */
+function apiBypassHosts(): string[] {
+    try {
+        if (typeof PLGAMES_API_URL !== 'undefined' && PLGAMES_API_URL) {
+            const host = new URL(PLGAMES_API_URL).hostname;
+            const apex = host.split('.').slice(-2).join('.');
+            return Array.from(new Set([host, apex, `*.${apex}`]));
+        }
+    } catch {
+        /* невалидный URL — просто без bypass для бэкенда */
+    }
+    return [];
+}
+
 export const DEFAULT_BYPASS_LIST: string[] = [
     'localhost',
     '127.0.0.1',
     '<local>',
-    'api.plgames-connect.example',
-    'buy.plgames-connect.example',
-    'plgames-connect.example',
+    ...apiBypassHosts(),
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {
