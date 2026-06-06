@@ -259,7 +259,11 @@ docs/
 - [x] PLGames Pro stub
 - [x] Branded UI и иконография
 - [x] Изолированный server-installer (NaiveProxy)
-- [ ] Реальный backend для Pro
+- [x] Реальный backend для Pro — заказы, выдача профиля, ротация кредов
+- [x] Подтверждение оплаты через DonatePay (поллинг ленты транзакций по `PLGC-<orderId>`)
+- [x] Пул прокси + агент-синхронизатор: выданные креды попадают в basic_auth Caddy
+- [x] Anti-share: installation-id binding, ротация кредов, shareguard по числу IP
+- [ ] Подпись вебхука DonatePay (поллинг уже работает как основной путь)
 - [ ] Per-site routing (PAC-список доменов через прокси)
 - [ ] Web Store листинг
 - [ ] Локализация EN / RU / KZ

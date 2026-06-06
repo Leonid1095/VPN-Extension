@@ -5,6 +5,26 @@ All notable changes to **PLGames Connect** will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added — backend Pro (подтверждение оплаты)
+- **Поллинг транзакций DonatePay** — основной механизм подтверждения оплаты
+  (их вебхук ненадёжен и без подписи). `lib/donatepay-poller.js` раз в
+  `DONATEPAY_POLL_INTERVAL_MS` (по умолчанию 60с) тянет ленту транзакций и
+  подтверждает заказы по комментарию `PLGC-<orderId>` со статусом success.
+- `lib/payments.js` — общий идемпотентный `confirmOrderPaid`: выдаёт прокси-креды
+  из пула и помечает заказ `paid`. Источник истины для оплаты.
+
+### Changed
+- `routes/donatepay-webhook.js` переведён на общий `confirmOrderPaid` (вебхук
+  остаётся вторичным путём поверх той же логики).
+- `server.js` стартует поллер после `listen`, если задан API-ключ DonatePay.
+
+### Ops
+- Пул прокси конфигурируется через `backend/data/proxy-pool.json` (gitignored),
+  адрес API расширения — через `PLGAMES_API_URL` на сборке. Ни доменов, ни
+  секретов в исходниках: всё берётся из окружения.
+
 ## [2.4.2] — 2026-05-02
 
 ### Fixed
