@@ -8,6 +8,7 @@ import ordersRoute from './routes/orders.js';
 import profileRoute from './routes/profile.js';
 import donatepayWebhook from './routes/donatepay-webhook.js';
 import internalRoute from './routes/internal.js';
+import { startDonatepayPoller } from './lib/donatepay-poller.js';
 
 const app = Fastify({
     logger: {
@@ -43,6 +44,7 @@ await app.register(internalRoute);
 try {
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`PLGames Connect API listening on :${config.port}`);
+    startDonatepayPoller(app);
 } catch (err) {
     app.log.error(err);
     process.exit(1);
