@@ -3,7 +3,8 @@ import { config, TIERS } from '../lib/config.js';
 import { generateOrderId } from '../lib/token.js';
 import { buildPaymentUrl } from '../lib/donatepay.js';
 
-function publicOrderView(o) {
+function publicOrderView(o, includeSecret = false) {
+    const paid = o.status === 'paid';
     return {
         id: o.id,
         tier: o.tier,
@@ -12,10 +13,34 @@ function publicOrderView(o) {
         durationDays: o.duration_days,
         createdAt: o.created_at,
         expiresAt: o.expires_at,
-        // только когда оплачено — даём токен
-        token: o.status === 'paid' ? o.token : undefined,
-        subscribedUntil: o.status === 'paid' ? o.subscribed_until : undefined,
+        // Токен (bearer-креды подписки) отдаём ТОЛЬКО устройству, создавшему
+        // заказ. orderId светится в комментарии платежа (публичная лента
+        // DonatePay), поэтому пуллинг по одному orderId не должен его раскрывать.
+        token: paid && includeSecret ? o.token : undefined,
+        subscribedUntil: paid && includeSecret ? o.subscribed_until : undefined,
     };
+}
+
+function readInstallationId(req) {
+    const h = req.headers['x-installation-id'];
+    return typeof h === 'string' && h.length >= 8 ? h : '';
+}
+
+/**
+ * true, если запрос идёт с устройства-владельца заказа. Legacy-заказы без
+ * привязки привязываем к первому валидному installation_id (совместимость).
+ */
+function ownsOrder(order, installationId) {
+    if (!order.installation_id) {
+        if (installationId) {
+            db.prepare('UPDATE orders SET installation_id = ? WHERE id = ?').run(
+                installationId,
+                order.id,
+            );
+        }
+        return true;
+    }
+    return !!installationId && installationId === order.installation_id;
 }
 
 export default async function (fastify) {
@@ -29,12 +54,15 @@ export default async function (fastify) {
         const id = generateOrderId(8);
         const now = Date.now();
         const expires = now + config.orderTtlMs;
+        // Привязываем заказ к устройству уже при создании — так токен потом
+        // отдаётся только этому installation_id (см. GET /api/orders/:id).
+        const installationId = readInstallationId(req);
 
         db.prepare(
             `INSERT INTO orders
-             (id, tier, amount_rub, duration_days, status, created_at, expires_at)
-             VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
-        ).run(id, tier, t.amount_rub, t.duration_days, now, expires);
+             (id, tier, amount_rub, duration_days, status, created_at, expires_at, installation_id)
+             VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        ).run(id, tier, t.amount_rub, t.duration_days, now, expires, installationId || null);
 
         const paymentUrl = buildPaymentUrl(id, t.amount_rub);
 
@@ -62,7 +90,8 @@ export default async function (fastify) {
             .prepare('SELECT * FROM orders WHERE id = ?')
             .get(String(req.params.id || ''));
         if (!o) return reply.code(404).send({ error: 'order not found' });
-        return { order: publicOrderView(o) };
+        const includeSecret = ownsOrder(o, readInstallationId(req));
+        return { order: publicOrderView(o, includeSecret) };
     });
 
     // GET /api/tiers — публичный список тарифов (для landing/popup)

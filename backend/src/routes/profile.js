@@ -60,18 +60,26 @@ function rotateCreds(order) {
  * между устройствами.
  */
 function bindOrCheckInstallation(order, installationId) {
-    if (!installationId || typeof installationId !== 'string' || installationId.length < 8) {
+    const provided =
+        typeof installationId === 'string' && installationId.length >= 8
+            ? installationId
+            : '';
+    // Заказ уже привязан (при создании заказа или ранее) — требуем точное
+    // совпадение. Пустой/отсутствующий заголовок больше НЕ пропускается: иначе
+    // привязку можно было обойти, просто не отправляя x-installation-id.
+    if (order.installation_id) {
+        if (provided !== order.installation_id) {
+            return { ok: false, reason: 'installation mismatch' };
+        }
         return { ok: true, order };
     }
-    if (!order.installation_id) {
+    // Legacy-заказ без привязки — привязываем к первому валидному id.
+    if (provided) {
         db.prepare('UPDATE orders SET installation_id = ? WHERE id = ?').run(
-            installationId,
+            provided,
             order.id,
         );
-        return { ok: true, order: { ...order, installation_id: installationId } };
-    }
-    if (order.installation_id !== installationId) {
-        return { ok: false, reason: 'installation mismatch' };
+        return { ok: true, order: { ...order, installation_id: provided } };
     }
     return { ok: true, order };
 }

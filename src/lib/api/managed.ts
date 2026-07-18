@@ -88,6 +88,7 @@ export async function createOrder(tierKey: string): Promise<{
     pending: PendingOrder;
     paymentUrl: string;
 }> {
+    const installationId = await getInstallationId();
     const data = await api<{
         order: RawOrder;
         paymentUrl: string;
@@ -95,6 +96,7 @@ export async function createOrder(tierKey: string): Promise<{
         tierLabel: string;
     }>(`/api/orders`, {
         method: 'POST',
+        headers: { 'x-installation-id': installationId },
         body: JSON.stringify({ tier: tierKey }),
     });
     return {
@@ -120,7 +122,11 @@ export interface OrderStatusResult {
 
 /** Опросить статус заказа. Если paid — сразу возвращаем account+profile. */
 export async function pollOrder(orderId: string): Promise<OrderStatusResult> {
-    const data = await api<{ order: RawOrder }>(`/api/orders/${encodeURIComponent(orderId)}`);
+    const installationId = await getInstallationId();
+    const data = await api<{ order: RawOrder }>(
+        `/api/orders/${encodeURIComponent(orderId)}`,
+        { headers: { 'x-installation-id': installationId } },
+    );
     const o = data.order;
     if (o.status !== 'paid') return { status: o.status };
 
