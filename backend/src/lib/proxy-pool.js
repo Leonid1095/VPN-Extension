@@ -57,8 +57,10 @@ function pickServer() {
 /** Генерим креды для basic_auth Caddy/NaiveProxy. Логин включает orderId для трассировки. */
 function generateCreds(orderId) {
     const password = crypto.randomBytes(18).toString('base64url');
+    // Случайный суффикс: логин не должен быть предсказуем из (потенциально
+    // публичного) orderId — иначе для basic_auth осталось бы угадать лишь пароль.
     return {
-        username: `u_${orderId}`,
+        username: `u_${orderId}_${crypto.randomBytes(2).toString('hex')}`,
         password,
     };
 }

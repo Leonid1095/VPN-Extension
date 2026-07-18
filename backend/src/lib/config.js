@@ -1,19 +1,9 @@
 import 'node:process';
 
-function need(name, fallback = undefined) {
-    const v = process.env[name] ?? fallback;
-    if (v === undefined) {
-        throw new Error(`env ${name} is required`);
-    }
-    return v;
-}
-
 export const config = {
     port: parseInt(process.env.PORT || '8080', 10),
     host: process.env.HOST || '0.0.0.0',
     publicUrl: process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 8080}`,
-
-    jwtSecret: need('JWT_SECRET', 'dev-only-secret-replace-me'),
 
     donatepay: {
         userId: process.env.DONATEPAY_USER_ID || '',

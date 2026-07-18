@@ -2,6 +2,7 @@
 // Защищён shared-secret в заголовке X-Internal-Token. Никогда не публикуй URL и не
 // проксируй наружу без TLS+файрвола.
 
+import crypto from 'node:crypto';
 import { db } from '../lib/db.js';
 import {
     INTERNAL_API_TOKEN,
@@ -9,6 +10,14 @@ import {
     SHAREGUARD_MAX_IPS,
 } from '../lib/config.js';
 import { getServerById } from '../lib/proxy-pool.js';
+
+/** Сравнение в постоянном времени — без утечки по таймингу. */
+function safeEqual(a, b) {
+    const ab = Buffer.from(String(a));
+    const bb = Buffer.from(String(b));
+    if (ab.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ab, bb);
+}
 
 /**
  * Скользящее окно: для каждого proxy_user — set of client IPs, замеченных
@@ -39,7 +48,7 @@ function checkInternalToken(req, reply) {
         return false;
     }
     const got = req.headers['x-internal-token'] || '';
-    if (typeof got !== 'string' || got !== INTERNAL_API_TOKEN) {
+    if (typeof got !== 'string' || !safeEqual(got, INTERNAL_API_TOKEN)) {
         reply.code(401).send({ error: 'forbidden' });
         return false;
     }

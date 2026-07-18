@@ -3,7 +3,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { config } from './lib/config.js';
-import './lib/db.js'; // инициализация
+import { purgeOldOrders } from './lib/db.js'; // named import также инициализирует БД
 import ordersRoute from './routes/orders.js';
 import profileRoute from './routes/profile.js';
 import donatepayWebhook from './routes/donatepay-webhook.js';
@@ -45,6 +45,18 @@ try {
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`PLGames Connect API listening on :${config.port}`);
     startDonatepayPoller(app);
+
+    // Периодическая очистка старых неоплаченных заказов (раз в час).
+    const purgeTick = () => {
+        try {
+            const n = purgeOldOrders();
+            if (n > 0) app.log.info({ purged: n }, 'purged old orders');
+        } catch (e) {
+            app.log.warn({ err: String(e) }, 'order purge failed');
+        }
+    };
+    purgeTick();
+    setInterval(purgeTick, 60 * 60 * 1000).unref?.();
 } catch (err) {
     app.log.error(err);
     process.exit(1);

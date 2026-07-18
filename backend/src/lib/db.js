@@ -55,3 +55,19 @@ export function ensureClean() {
          WHERE status = 'pending' AND expires_at < ?`,
     ).run(Date.now());
 }
+
+/**
+ * Удаляет старые неоплаченные заказы, чтобы таблица не росла бесконечно
+ * (создание заказа не требует аутентификации — POST /api/orders открыт).
+ * paid/revoked НЕ трогаем: это активные/аннулированные подписки.
+ */
+export function purgeOldOrders(graceMs = 7 * 24 * 60 * 60 * 1000) {
+    const cutoff = Date.now() - graceMs;
+    const r = db
+        .prepare(
+            `DELETE FROM orders
+              WHERE status NOT IN ('paid', 'revoked') AND expires_at < ?`,
+        )
+        .run(cutoff);
+    return r.changes;
+}
