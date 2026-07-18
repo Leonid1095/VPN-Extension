@@ -18,8 +18,10 @@ export function confirmOrderPaid(orderId, amountRub, paymentId) {
     if (order.status !== 'pending') {
         return { ok: false, code: 'bad_status', reason: order.status };
     }
-    // недоплата (допускаем 1₽ погрешности на округление комиссий)
-    if (amountRub > 0 && amountRub + 1 < order.amount_rub) {
+    // Проверка суммы. Отсутствие/ноль суммы трактуем как недоплату, а НЕ как
+    // «пропустить проверку» — иначе вебхук без поля sum обходил бы валидацию
+    // (Number(undefined) => 0). Допускаем 1₽ погрешности на округление комиссий.
+    if (!(amountRub > 0) || amountRub + 1 < order.amount_rub) {
         return {
             ok: false,
             code: 'underpaid',

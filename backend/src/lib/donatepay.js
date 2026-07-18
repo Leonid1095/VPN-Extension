@@ -50,11 +50,13 @@ export function parseOrderIdFromComment(comment) {
  * формируется как HMAC-SHA256 от полей оплаты с разделителями.
  *
  * Текущая реализация: принимает HMAC-SHA256 в заголовке X-Signature от raw body.
- * Если DONATEPAY_WEBHOOK_SECRET пустой — подпись не проверяется (только для dev).
+ * Secure by default: если DONATEPAY_WEBHOOK_SECRET пуст — вебхук ОТКЛОНЯЕТСЯ.
+ * Для локальной разработки можно явно разрешить неподписанные вебхуки
+ * переменной ALLOW_UNSIGNED_WEBHOOK=1 (никогда в проде).
  */
 export function verifyWebhookSignature(rawBody, headerSig) {
     const secret = config.donatepay.webhookSecret;
-    if (!secret) return true; // dev mode
+    if (!secret) return process.env.ALLOW_UNSIGNED_WEBHOOK === '1';
     if (!headerSig) return false;
     const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
     try {
