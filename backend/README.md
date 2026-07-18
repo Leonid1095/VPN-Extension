@@ -21,7 +21,7 @@
 ```bash
 cd backend
 cp .env.example .env
-# отредактируй .env (минимум: JWT_SECRET, DONATEPAY_USERNAME)
+# отредактируй .env (минимум: DONATEPAY_USERNAME, DONATEPAY_WEBHOOK_SECRET)
 npm install
 node src/server.js
 # слушает 0.0.0.0:8080
@@ -151,7 +151,7 @@ SQLite файл лежит в `data/plgames.db`. Бэкап — копирова
 
 ## Безопасность
 
-- В `.env` лежат секреты: `JWT_SECRET`, DonatePay-ключи. **`.env` в `.gitignore`.**
+- В `.env` лежат секреты: DonatePay-ключи, `DONATEPAY_WEBHOOK_SECRET`, `INTERNAL_API_TOKEN`. **`.env` в `.gitignore`.**
 - Bearer-токены никак не хранятся отдельно — они = `orders.token`. Logout удаляет
   только локально в расширении (не отзывает на сервере). При необходимости отзыва —
   `UPDATE orders SET token=NULL WHERE id=?`.
