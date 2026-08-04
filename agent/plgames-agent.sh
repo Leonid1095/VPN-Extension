@@ -83,8 +83,12 @@ NEW_CADDYFILE=$(awk -v repl="$USERS_BLOCK" '
     !inside { print }
 ' "$CADDYFILE")
 
-# 5) пишем атомарно
+# 5) пишем атомарно, сохраняя владельца и права: Caddy читает конфиг от своего
+# юзера (naive2), а агент работает от root — без этого файл станет root:root 644,
+# то есть либо Caddy не стартанёт, либо креды подписчиков станут видны всем в системе.
 echo "$NEW_CADDYFILE" > "$CADDYFILE.new"
+chown --reference="$CADDYFILE" "$CADDYFILE.new"
+chmod --reference="$CADDYFILE" "$CADDYFILE.new"
 mv "$CADDYFILE.new" "$CADDYFILE"
 
 # 6) reload Caddy

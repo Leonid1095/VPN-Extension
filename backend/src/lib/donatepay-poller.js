@@ -23,12 +23,48 @@ function txUrl() {
     return `${base}/transactions?access_token=${encodeURIComponent(config.donatepay.apiKey)}`;
 }
 
+// fetch() при сетевом сбое кидает `TypeError: fetch failed`, а настоящая
+// причина (ECONNRESET / ETIMEDOUT / ENOTFOUND / UND_ERR_*) лежит в e.cause —
+// undici её туда кладёт. String(e) её теряет, поэтому разворачиваем вручную.
+function errInfo(e) {
+    const info = { err: String(e) };
+    const cause = e?.cause;
+    if (cause) {
+        info.cause = String(cause);
+        if (cause.code) info.causeCode = cause.code;
+    }
+    return info;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// fetch с ретраем ТОЛЬКО на сетевой сбой (fetch() throw). Покрывает ~4%
+// transient-DNS (EAI_AGAIN) и редкие обрывы соединения. HTTP-статусы (429 и
+// прочее) сюда не попадают и НЕ ретраятся — это забота вызывающего, чтобы не
+// долбить DonatePay при rate-limit'е. 2 ретрая, короткий backoff.
+async function fetchTxWithRetry(log) {
+    const backoffMs = [500, 1500];
+    let lastErr;
+    for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
+        try {
+            return await fetch(txUrl(), { signal: AbortSignal.timeout(15000) });
+        } catch (e) {
+            lastErr = e;
+            if (attempt < backoffMs.length) {
+                log.debug({ ...errInfo(e), attempt: attempt + 1 }, 'donatepay poll: fetch retry');
+                await sleep(backoffMs[attempt]);
+            }
+        }
+    }
+    throw lastErr;
+}
+
 async function pollOnce(log) {
     let res;
     try {
-        res = await fetch(txUrl(), { signal: AbortSignal.timeout(15000) });
+        res = await fetchTxWithRetry(log);
     } catch (e) {
-        log.warn({ err: String(e) }, 'donatepay poll: fetch failed');
+        log.warn(errInfo(e), 'donatepay poll: fetch failed');
         return;
     }
     if (!res.ok) {
@@ -68,7 +104,7 @@ export function startDonatepayPoller(fastify) {
     fastify.log.info({ intervalMs: POLL_INTERVAL_MS }, 'donatepay poller started');
     const tick = () =>
         pollOnce(fastify.log).catch((e) =>
-            fastify.log.error({ err: String(e) }, 'donatepay poll: unexpected crash'),
+            fastify.log.error(errInfo(e), 'donatepay poll: unexpected crash'),
         );
     tick();
     const handle = setInterval(tick, POLL_INTERVAL_MS);

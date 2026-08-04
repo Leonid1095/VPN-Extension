@@ -18,8 +18,13 @@ export const config = {
     successUrl: process.env.SUCCESS_URL || 'https://example.com/thanks',
     proxyPoolFile: process.env.PROXY_POOL_FILE || './data/proxy-pool.json',
 
-    /** срок жизни pending-заказа */
-    orderTtlMs: 2 * 60 * 60 * 1000,
+    /**
+     * Срок жизни pending-заказа. Было 2 часа — этого не хватает на «оплачу
+     * попозже с карты»: поллер находит донат, а заказ уже expired, и
+     * confirmOrderPaid возвращает bad_status. Платёж при этом повисает молча
+     * (так потерялся PLGC-yckmz32j на 159 ₽ от 2026-05-11).
+     */
+    orderTtlMs: 24 * 60 * 60 * 1000,
 };
 
 /** Тарифы. Цены в рублях. comment-префикс — PLGC. */
