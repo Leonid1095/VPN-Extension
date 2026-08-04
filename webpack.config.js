@@ -6,8 +6,9 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
     const mode = argv && argv.mode === 'production' ? 'production' : 'development';
-    const apiUrl =
-        process.env.PLGAMES_API_URL || 'https://api.plgames-connect.example';
+    // Дефолт — прод: сборка без PLGAMES_API_URL раньше уезжала на
+    // несуществующий example-домен, и расширение молча не находило бэкенд.
+    const apiUrl = process.env.PLGAMES_API_URL || 'https://api.plgames-wow.online';
 
     return {
         mode,

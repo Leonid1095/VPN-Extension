@@ -10,6 +10,12 @@ type Screen = 'home' | 'addByo' | 'managed';
 const PRODUCT_NAME = 'PLGames Connect';
 const PRODUCT_SUBTITLE = 'Network Profile Manager';
 
+/**
+ * Куда писать, если что-то не работает — та же платформа поддержки, что стоит
+ * ссылкой в футере лендинга buy.plgames-wow.online.
+ */
+const SUPPORT_URL = 'https://marz116.duckdns.org/';
+
 // ============================================================================
 // design tokens
 // ============================================================================
@@ -645,7 +651,19 @@ const App: React.FC = () => {
                 />
             )}
 
-            <div style={S.footer}>PLGames Connect · v2.4.2 · трафик только в браузере</div>
+            <div style={S.footer}>
+                PLGames Connect · v{browser.runtime.getManifest().version} · трафик только в
+                браузере
+                {' · '}
+                <a
+                    href={SUPPORT_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: tokens.color.accent, textDecoration: 'none' }}
+                >
+                    поддержка
+                </a>
+            </div>
         </div>
     );
 };
@@ -1055,9 +1073,14 @@ const ManagedScreen: React.FC<{
                     const middle = res.tiers[Math.floor(res.tiers.length / 2)];
                     if (middle) setPickedTier(middle.key);
                 } else {
+                    // Важно выставить пустой список, а не оставлять null: на null
+                    // рендерится спиннер «Загружаем тарифы…», и при любой ошибке
+                    // он крутился бы вечно вместо внятного сообщения.
+                    setTiers([]);
                     onError(res.error || 'Не удалось загрузить тарифы');
                 }
             } catch (e) {
+                setTiers([]);
                 onError((e as Error).message);
             }
         })();

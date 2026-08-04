@@ -22,7 +22,7 @@ function resolveApiUrl(): string {
     } catch {
         // не определён — fallback ниже
     }
-    return 'https://api.plgames-connect.example';
+    return 'https://api.plgames-wow.online';
 }
 
 export const API_URL = resolveApiUrl();
