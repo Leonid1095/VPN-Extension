@@ -38,13 +38,30 @@ jobs:
           test -f dist/popup.html
           test -d dist/assets
 
+      # Расширение сравнивает тег релиза с версией в своём манифесте. Если тег
+      # ушёл вперёд, а package.json/manifest.json остались на старой версии —
+      # люди получают вечное «доступна новая версия»: качают, ставят, и версия
+      # не меняется. Так случилось с v2.4.3 и v2.4.4 (внутри лежала сборка 2.4.2).
+      - name: Version must match tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          MAN="$(node -p "require('./src/manifest.json').version")"
+          echo "tag=$TAG package.json=$PKG manifest=$MAN"
+          test "$TAG" = "$PKG" || { echo "::error::tag $TAG != package.json $PKG"; exit 1; }
+          test "$TAG" = "$MAN" || { echo "::error::tag $TAG != manifest $MAN"; exit 1; }
+
       - name: Package zip
         run: |
           VERSION="$(node -p "require('./package.json').version")"
           cd dist
           zip -r "../plgames-connect-v${VERSION}.zip" .
           cd ..
-          ls -lh plgames-connect-v${VERSION}.zip
+          # Второе имя — без версии: именно на него ссылаются кнопка на лендинге
+          # и автообновление (/releases/latest/download/plgames-connect.zip).
+          cp "plgames-connect-v${VERSION}.zip" plgames-connect.zip
+          ls -lh plgames-connect-v${VERSION}.zip plgames-connect.zip
           echo "ZIP_NAME=plgames-connect-v${VERSION}.zip" >> "$GITHUB_ENV"
 
       - name: Upload artifact
@@ -58,5 +75,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ZIP_NAME }}
+          files: |
+            ${{ env.ZIP_NAME }}
+            plgames-connect.zip
           generate_release_notes: true
