@@ -19,7 +19,9 @@ const app = Fastify({
                 : undefined,
     },
     bodyLimit: 100_000,
-    trustProxy: true,
+    // The loopback nginx upstream appends the address it observed as the
+    // rightmost hop. Ignore addresses supplied by the original request.
+    trustProxy: 1,
 });
 
 await app.register(cors, {

@@ -7,22 +7,33 @@ import {
     normalizePayload,
 } from '../lib/donatepay.js';
 
+const MAX_WEBHOOK_BYTES = 100_000;
+
 export default async function (fastify) {
     fastify.post(
         config.donatepay.webhookPath,
         {
+            bodyLimit: MAX_WEBHOOK_BYTES,
             // забираем raw body из payload-стрима до парсинга, чтобы
             // verifyWebhookSignature мог посчитать HMAC по точным байтам.
             // Возвращаем новый readable stream с теми же данными — иначе
             // fastify зависает, ожидая body, который мы уже прочитали.
             preParsing: async (req, _reply, payload) => {
                 const chunks = [];
-                for await (const chunk of payload) chunks.push(chunk);
-                const buf = Buffer.concat(
-                    chunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c))),
-                );
-                req.rawBody = buf.toString('utf8');
-                return Readable.from(buf);
+                let size = 0;
+                for await (const chunk of payload) {
+                    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+                    size += bytes.length;
+                    if (size > MAX_WEBHOOK_BYTES) {
+                        throw Object.assign(new Error('Webhook body too large'), { statusCode: 413 });
+                    }
+                    chunks.push(bytes);
+                }
+                const buf = Buffer.concat(chunks, size);
+                req.rawBody = buf;
+                const replay = Readable.from([buf], { objectMode: false });
+                replay.receivedEncodedLength = size;
+                return replay;
             },
         },
         async (req, reply) => {
@@ -31,11 +42,8 @@ export default async function (fastify) {
                 req.headers['x-donatepay-signature'] ||
                 '';
 
-            if (!verifyWebhookSignature(req.rawBody || '', String(sigHeader))) {
-                fastify.log.warn(
-                    { sig: sigHeader, path: req.url },
-                    'donatepay webhook bad signature',
-                );
+            if (!verifyWebhookSignature(req.rawBody || '', typeof sigHeader === 'string' ? sigHeader : '')) {
+                fastify.log.warn('donatepay webhook bad signature');
                 return reply.code(401).send({ error: 'bad signature' });
             }
 
@@ -51,7 +59,7 @@ export default async function (fastify) {
 
             const orderId = parseOrderIdFromComment(evt.comment);
             if (!orderId) {
-                fastify.log.warn({ evt }, 'donatepay webhook: no orderId in comment');
+                fastify.log.warn('donatepay webhook: no orderId in comment');
                 return { ok: true, ignored: true, reason: 'no order id in comment' };
             }
 
@@ -59,7 +67,7 @@ export default async function (fastify) {
             const result = confirmOrderPaid(orderId, evt.amountRub, evt.paymentId);
             switch (result.code) {
                 case 'not_found':
-                    fastify.log.warn({ orderId, evt }, 'donatepay: order not found');
+                    fastify.log.warn('donatepay: order not found');
                     return reply.code(404).send({ error: 'order not found' });
                 case 'bad_status':
                     return reply

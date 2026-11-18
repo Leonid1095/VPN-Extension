@@ -56,17 +56,10 @@ export function parseOrderIdFromComment(comment) {
  */
 export function verifyWebhookSignature(rawBody, headerSig) {
     const secret = config.donatepay.webhookSecret;
-    if (!secret) return process.env.ALLOW_UNSIGNED_WEBHOOK === '1';
-    if (!headerSig) return false;
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-    try {
-        return crypto.timingSafeEqual(
-            Buffer.from(expected, 'hex'),
-            Buffer.from(headerSig, 'hex'),
-        );
-    } catch {
-        return false;
-    }
+    if (!secret) return process.env.NODE_ENV !== 'production' && process.env.ALLOW_UNSIGNED_WEBHOOK === '1';
+    if (!/^[0-9a-f]{64}$/i.test(headerSig)) return false;
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest();
+    return crypto.timingSafeEqual(expected, Buffer.from(headerSig, 'hex'));
 }
 
 /**
